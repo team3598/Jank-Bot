@@ -19,6 +19,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -340,5 +341,21 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     @Override
     public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+    }
+
+    public ChassisSpeeds getFieldRelativeSpeed() {
+        ChassisSpeeds robotSpeeds = this.getState().Speeds;
+        Rotation2d heading = this.getState().Pose.getRotation();
+        Translation2d robotVelocityVector = new Translation2d(
+            robotSpeeds.vxMetersPerSecond, 
+            robotSpeeds.vyMetersPerSecond
+        );
+        Translation2d fieldVelocityVector = robotVelocityVector.rotateBy(heading);
+
+        return new ChassisSpeeds(
+            fieldVelocityVector.getX(), 
+            fieldVelocityVector.getY(), 
+            robotSpeeds.omegaRadiansPerSecond
+        );
     }
 }

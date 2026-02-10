@@ -14,7 +14,10 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.events.EventTrigger;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -94,23 +97,38 @@ public class RobotContainer {
         
         joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
         joystick.b().whileTrue(
-            turret.runEnd(      
+            turret.runEnd(
                 () -> {
-                    //turret.setShooterVelocity(turretCalibrationCommand.flywheelTunerNumber);
-                    //turret.setHoodAngle(turretCalibrationCommand.hoodTunerNumber);
-                    turret.setShooterVelocity(turret.m_shooterSpeedMap.get(PoseSubsystem.getDistToTarget(turret.hubPosition)));
-                    turret.setHoodAngle(turret.m_hoodAngleMap.get(PoseSubsystem.getDistToTarget(turret.hubPosition)));
-                    if (turret.isShooterAtSpeed(PoseSubsystem.getDistToTarget(turret.hubPosition))) {
+                    Translation2d realHub = turret.hubPosition; 
+                    ChassisSpeeds robotVel = drivetrain.getFieldRelativeSpeed();
+                    Pose2d robotPose = PoseSubsystem.getCurrentPose();                    
+            
+                    Translation2d virtualHub = turret.getCorrectedTargetPosition(realHub, robotVel, PoseSubsystem);
+                    double virtualDist = robotPose.getTranslation().getDistance(virtualHub);
+
+                    turret.setShooterVelocity(turret.m_shooterSpeedMap.get(virtualDist));
+                    turret.setHoodAngle(turret.m_hoodAngleMap.get(virtualDist));
+
+                    double dx = virtualHub.getX() - robotPose.getX();
+                    double dy = virtualHub.getY() - robotPose.getY();
+
+                    Rotation2d angleToTarget = new Rotation2d(dx, dy);
+                    Rotation2d targetAngleRelative = angleToTarget.minus(robotPose.getRotation());
+            
+                    turret.moveTurretAngle(-targetAngleRelative.getDegrees() / 360.0);
+            
+                    if (turret.isShooterAtSpeed(turret.m_shooterSpeedMap.get(virtualDist))) {
                         turret.setFeederVelocity(80);
                         turret.setHopperSpeed(35);
                     }
                 },
                 () -> {
                     turret.stopMotors();
-                    turret.setHoodAngle(-0.05);
+                    turret.setHoodAngle(-0.05); // Stow hood
                     intake.setIntakeVelocity(0);
-                })
-            );
+                }
+            )
+        );
         joystick.y().whileTrue(intake.runIntakeCommand(30.0));
         joystick.x().whileTrue(
             turret.runEnd(
