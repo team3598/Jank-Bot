@@ -19,10 +19,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -50,7 +53,8 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
+    //private final CommandXboxController ps5Controller = new CommandXboxController(0);
+    private final CommandPS5Controller ps5Controller = new CommandPS5Controller(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
@@ -58,6 +62,8 @@ public class RobotContainer {
     private TurretSubsystem turret = new TurretSubsystem();
     private TowerAlignment alignment = new TowerAlignment();
     private final PoseSubsystem PoseSubsystem = new PoseSubsystem(drivetrain);
+    private boolean isAiming = false;
+    private boolean isShooting = false;
     private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, PoseSubsystem);
 
 
@@ -73,7 +79,7 @@ public class RobotContainer {
         
         
         SmartDashboard.putData("Auto Mode", autoChooser);
-        turretCalibrationCommand.ignoringDisable(true).schedule();
+        //turretCalibrationCommand.ignoringDisable(true).schedule();
         FollowPathCommand.warmupCommand().schedule();
     }
     
@@ -81,41 +87,61 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
        drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
+            drivetrain.applyRequest(() -> {
+                double currentMaxSpeed;
+                currentMaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+                /* 
+                if (isShooting) {
+                    currentMaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) / 3.0;
+                } else {
+                    currentMaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+                }*/ //for testing, i had a crappy controller before but now we got fresh ones :p
+ 
+             return drive.withVelocityX(-ps5Controller.getLeftY() * currentMaxSpeed)
+                    .withVelocityY(-ps5Controller.getLeftX() * currentMaxSpeed) 
+                    .withRotationalRate(-ps5Controller.getRightX() * MaxAngularRate);
+            })
         );
+
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
-        
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(
+
+        turret.setDefaultCommand(
+            turret.run(() -> {
+                if (isAiming) {
+                    runAiming();
+                } else {
+                    turret.stopMotors();
+                    turret.setHoodAngle(-0.05);
+                }
+            })
+        );
+
+        ps5Controller.cross().onTrue(
+            Commands.runOnce(() -> {
+                isAiming = !isAiming;
+            })
+        );
+
+        ps5Controller.circle().whileTrue(
             turret.runEnd(
                 () -> {
-                    Translation2d realHub = turret.hubPosition; 
-                    ChassisSpeeds robotVel = drivetrain.getFieldRelativeSpeed();
-                    Pose2d robotPose = PoseSubsystem.getCurrentPose();                    
-            
-                    Translation2d virtualHub = turret.getCorrectedTargetPosition(realHub, robotVel, PoseSubsystem);
-                    double virtualDist = robotPose.getTranslation().getDistance(virtualHub);
+                    ps5Controller.setRumble(RumbleType.kBothRumble, 1);
+                    isShooting = true;
+                    double virtualDist = runAiming(); 
+
+                    double targetSpeed = turret.m_shooterSpeedMap.get(virtualDist);
+                    double targetAngle = turret.m_hoodAngleMap.get(virtualDist);
+
+                    turret.setShooterVelocity(targetSpeed);
+                    turret.setHoodAngle(targetAngle);
 
                     turret.setShooterVelocity(turret.m_shooterSpeedMap.get(virtualDist));
                     turret.setHoodAngle(turret.m_hoodAngleMap.get(virtualDist));
-
-                    double dx = virtualHub.getX() - robotPose.getX();
-                    double dy = virtualHub.getY() - robotPose.getY();
-
-                    Rotation2d angleToTarget = new Rotation2d(dx, dy);
-                    Rotation2d targetAngleRelative = angleToTarget.minus(robotPose.getRotation());
-            
-                    turret.moveTurretAngle(-targetAngleRelative.getDegrees() / 360.0);
             
                     if (turret.isShooterAtSpeed(turret.m_shooterSpeedMap.get(virtualDist))) {
                         turret.setFeederVelocity(80);
@@ -123,25 +149,27 @@ public class RobotContainer {
                     }
                 },
                 () -> {
+                    ps5Controller.setRumble(RumbleType.kBothRumble, 0);
+                    isShooting = false;
                     turret.stopMotors();
-                    turret.setHoodAngle(-0.05); // Stow hood
+                    turret.setHoodAngle(-0.3);
                     intake.setIntakeVelocity(0);
                 }
             )
         );
-        joystick.y().whileTrue(intake.runIntakeCommand(30.0));
-        joystick.x().whileTrue(
+        ps5Controller.triangle().whileTrue(intake.runIntakeCommand(30.0));
+        ps5Controller.square().whileTrue(
             turret.runEnd(
                 () -> turret.setHopperSpeed(20),
                 () -> turret.setHopperSpeed(0))
         );
 
-        joystick.povLeft().whileTrue(turret.goToAngle(-90));
-        joystick.povRight().whileTrue(turret.goToAngle(90));
-        //joystick.povDown().whileTrue(turret.goToAngle(0));
+        ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
+        ps5Controller.povRight().whileTrue(turret.goToAngle(90));
+        //ps5Controller.povDown().whileTrue(turret.goToAngle(0));
         
-        joystick.povUp().onTrue(intake.setIntakeVerticalPosition(-7.80));
-        joystick.povDown().onTrue(intake.setIntakeVerticalPosition(0.05));
+        ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(-7.80));
+        ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(0.05));
 
 
         RobotModeTriggers.disabled().onTrue(
@@ -159,7 +187,7 @@ public class RobotContainer {
             .ignoringDisable(true)
         );
 
-        /*joystick.povUp().whileTrue(
+        /*ps5Controller.povUp().whileTrue(
             turret.runEnd(
                 () -> turret.setHoodAngle(turretCalibrationCommand.hoodTunerNumber),
                 () -> turret.stopMotors()
@@ -169,13 +197,13 @@ public class RobotContainer {
         
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        /*ps5Controller.back().and(ps5Controller.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        ps5Controller.back().and(ps5Controller.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        ps5Controller.start().and(ps5Controller.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        ps5Controller.start().and(ps5Controller.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));*/
 
         // Reset the field-centric heading on left bumper press.
-        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        ps5Controller.L1().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         //drivetrain.registerTelemetry(logger::telemeterize);
         System.out.println(
@@ -183,8 +211,46 @@ public class RobotContainer {
         + "Shooter Power: " + turret.m_hoodAngleMap.get(PoseSubsystem.getDistToTarget(turret.hubPosition)));
             
     }
+    
+    private double runAiming() {
+        double realVisionDist = PoseSubsystem.getDistToTarget(turret.hubPosition);
+        Pose2d robotPose = PoseSubsystem.getCurrentPose();
+        ChassisSpeeds robotVel = drivetrain.getFieldRelativeSpeed();
 
- 
+        double t = turret.calculateTimeOfFlight(realVisionDist);
+
+        double shiftX = -robotVel.vxMetersPerSecond * t;
+        double shiftY = -robotVel.vyMetersPerSecond * t;
+    
+        Translation2d virtualHub = new Translation2d(
+            turret.hubPosition.getX() + shiftX,
+            turret.hubPosition.getY() + shiftY
+        );
+
+        Translation2d robotToTarget = turret.hubPosition.minus(robotPose.getTranslation());
+        Rotation2d angleToTarget = new Rotation2d(robotToTarget.getX(), robotToTarget.getY());
+        double velTowardsTarget = (robotVel.vxMetersPerSecond * angleToTarget.getCos()) + 
+                              (robotVel.vyMetersPerSecond * angleToTarget.getSin());
+
+        double virtualDist = realVisionDist - (velTowardsTarget * t);
+
+        if (virtualDist < 1.0) virtualDist = 1.0; 
+
+        turret.setHoodAngle(turret.m_hoodAngleMap.get(virtualDist));
+    
+        double dx = virtualHub.getX() - robotPose.getX();
+        double dy = virtualHub.getY() - robotPose.getY();
+        Rotation2d targetRot = new Rotation2d(dx, dy);
+        Rotation2d relativeRot = targetRot.minus(robotPose.getRotation());
+        double aimAngle = Math.IEEEremainder(relativeRot.getDegrees(), 360.0);
+        double robotSpinRPS = drivetrain.getState().Speeds.omegaRadiansPerSecond / (2 * Math.PI);
+        double counteractedSpinRPS = -robotSpinRPS;
+
+        turret.moveTurretAngle(-aimAngle / 360.0);
+        //System.out.println("Robot Speed (m/s): " + robotVel.vxMetersPerSecond);
+        return virtualDist; 
+    }
+
     public Command getAutonomousCommand() {
         /* Run the path selected from the auto chooser */
         return autoChooser.getSelected();

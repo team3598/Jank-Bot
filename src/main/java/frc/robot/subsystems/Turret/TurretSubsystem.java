@@ -49,9 +49,9 @@ public class TurretSubsystem extends SubsystemBase {
     public InterpolatingDoubleTreeMap m_shooterSpeedMap;
     public InterpolatingDoubleTreeMap m_hoodAngleMap;
     public Translation2d hubPosition = new Translation2d(4.625, 4.035);
-;
+
     private final double shooterWheelRadius = Units.inchesToMeters(2.0); // 4-inch wheel
-    private final double fuelEfficiency = 1.10; 
+    private final double fuelEfficiency = 0.3;
     
     public TurretSubsystem() {
         m_shooterSpeedMap = new InterpolatingDoubleTreeMap();
@@ -75,15 +75,15 @@ public class TurretSubsystem extends SubsystemBase {
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
         turnerConfig.Feedback.SensorToMechanismRatio = 41.66666; //placeholder, change this
-        turnerConfig.MotionMagic.MotionMagicCruiseVelocity = 1.0; 
-        turnerConfig.MotionMagic.MotionMagicAcceleration = 2.0;  
-        turnerConfig.MotionMagic.MotionMagicJerk = 10.0;         
-        turnerConfig.Slot0.kP = 12; 
-        turnerConfig.Slot0.kV = 0.1; 
+        turnerConfig.MotionMagic.MotionMagicCruiseVelocity = 8.0; 
+        turnerConfig.MotionMagic.MotionMagicAcceleration = 20.0;  
+        turnerConfig.MotionMagic.MotionMagicJerk = 100.0;
+        turnerConfig.Slot0.kP = 80; 
+        turnerConfig.Slot0.kV = 0.35;
         turnerConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        turnerConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 0.25; 
+        turnerConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 0.4; 
         turnerConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        turnerConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -0.25;
+        turnerConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -0.4;
         turnerConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         turnerConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
@@ -133,23 +133,23 @@ public class TurretSubsystem extends SubsystemBase {
         m_shooterSpeedMap.put(2.0, 24.0);
         m_hoodAngleMap.put(2.0, 0.0);
 
-        m_shooterSpeedMap.put(2.5, 27.5);
+        m_shooterSpeedMap.put(2.5, 26.5);
         m_hoodAngleMap.put(2.5, 0.0);
 
-        m_shooterSpeedMap.put(3.0, 30.0);
+        m_shooterSpeedMap.put(3.0, 28.0);
         m_hoodAngleMap.put(3.0, 0.0);
 
-        m_shooterSpeedMap.put(3.5, 31.0);
+        m_shooterSpeedMap.put(3.5, 29.0);
         m_hoodAngleMap.put(3.5, 2.5);
 
-        m_shooterSpeedMap.put(4.0, 33.0);
-        m_hoodAngleMap.put(4.0, 4.0);
+        m_shooterSpeedMap.put(4.0, 31.0);
+        m_hoodAngleMap.put(4.0, 3.5);
 
-        m_shooterSpeedMap.put(4.5, 34.0);
-        m_hoodAngleMap.put(4.5, 6.0);
+        m_shooterSpeedMap.put(4.5, 32.0);
+        m_hoodAngleMap.put(4.5, 5.0);
 
-        m_shooterSpeedMap.put(5.0, 35.0);
-        m_hoodAngleMap.put(5.0, 7.0);
+        m_shooterSpeedMap.put(5.0, 33.0);
+        m_hoodAngleMap.put(5.0, 5.5);
     }
 
     /*public void resetTurretAngle() {
@@ -160,13 +160,16 @@ public class TurretSubsystem extends SubsystemBase {
 
     public double calculateTimeOfFlight(double distance) {
         double targetRPS = m_shooterSpeedMap.get(distance);
+        double targetHoodDeg = m_hoodAngleMap.get(distance); 
+
         double flywheelSurfaceSpeed = targetRPS * (2 * Math.PI * shooterWheelRadius);
-    
         double exitVelocity = flywheelSurfaceSpeed * fuelEfficiency;
 
-        if (exitVelocity < 1.0) return 1.0; 
-        return (distance / exitVelocity) + 0.05;
-    }
+        double horizontalVelocity = exitVelocity * Math.cos(Math.toRadians(targetHoodDeg));
+
+        if (horizontalVelocity < 1.0) return 1.0; 
+        return (distance / horizontalVelocity) + 0.05;
+    }   
 
     public boolean isShooterAtSpeed(double targetRPS) {
         return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 1;
@@ -285,8 +288,9 @@ public class TurretSubsystem extends SubsystemBase {
         //include a print statement for absolute encoder offset, then set that later.
         //System.out.println(turretShooter.getVelocity());
         //System.out.println(turretHood.getPosition());
-        System.out.println("Turret Turn Position: " + turretTurner.getPosition());
-
+        //System.out.println("Turret Turn Position: " + turretTurner.getPosition());
+        double error = turretTurner.getClosedLoopError().getValueAsDouble();
+        System.out.println("Tracking Error: " + error);
     // This method will be called once per scheduler run
     }
 }

@@ -41,11 +41,13 @@ public class PoseSubsystem extends SubsystemBase {
             var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
             var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
             
-            LimelightHelpers.SetRobotOrientation(name, mt1.pose.getRotation().getDegrees(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
-            
             if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0 || 
                 mt1 == null || mt1.tagCount == 0 || mt1.avgTagDist > 4.0) 
                  {return;}
+
+            LimelightHelpers.SetRobotOrientation(name, mt1.pose.getRotation().getDegrees(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
+            
+            
     
             Vector<N3> stdDevs = calculateStdDev(mt1.avgTagDist); //we need our std dev for rotation to be high so that the robot uses the gyro for drivetrain, but the stddev will nudge the gyro in the right direction (if it drifts)
     
