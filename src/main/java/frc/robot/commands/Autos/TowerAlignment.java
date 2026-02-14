@@ -21,7 +21,7 @@ public class TowerAlignment{
     private final Pose2d trench1 = new Pose2d(3.375, 7.4, Rotation2d.fromDegrees(0));
     private final Pose2d trench2 = new Pose2d(3.375, .7, Rotation2d.fromDegrees(0));
     private final Pose2d NZtrench1 = new Pose2d(5.9, 7.4, Rotation2d.fromDegrees(0));
-    private final Pose2d NZtrench2 = new Pose2d(3.375, .7, Rotation2d.fromDegrees(0));
+    private final Pose2d NZtrench2 = new Pose2d(5.9, .7, Rotation2d.fromDegrees(0));
     private final PathConstraints constraints = new PathConstraints(3, 3.0, Units.degreesToRadians(540), Units.degreesToRadians(720));
     //insert more positions for important places here
 

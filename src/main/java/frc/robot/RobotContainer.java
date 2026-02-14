@@ -143,7 +143,7 @@ public class RobotContainer {
                     turret.setShooterVelocity(100);
                     turret.setHoodAngle(turret.m_hoodAngleMap.get(virtualDist));
             
-                    if (turret.isShooterAtSpeed(turret.m_shooterSpeedMap.get(virtualDist))) {
+                    if (turret.isShooterAtSpeed(100)) {
                         turret.setFeederVelocity(80);
                         turret.setHopperSpeed(35);
                     }
