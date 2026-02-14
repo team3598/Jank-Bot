@@ -290,7 +290,9 @@ public class TurretSubsystem extends SubsystemBase {
         //System.out.println(turretHood.getPosition());
         //System.out.println("Turret Turn Position: " + turretTurner.getPosition());
         double error = turretTurner.getClosedLoopError().getValueAsDouble();
-        System.out.println("Tracking Error: " + error);
+        //System.out.println("Tracking Error: " + error);
+        System.out.println(getFlywheelSpeed());
+        
     // This method will be called once per scheduler run
     }
 }

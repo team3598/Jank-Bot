@@ -66,7 +66,6 @@ public class RobotContainer {
     private boolean isShooting = false;
     private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, PoseSubsystem);
 
-
     public RobotContainer() {
         configureBindings();
         NamedCommands.registerCommand("IntakeOn", intake.beginIntakeCommand());
@@ -77,7 +76,7 @@ public class RobotContainer {
  
         autoChooser = AutoBuilder.buildAutoChooser("intaketest");
         
-        
+
         SmartDashboard.putData("Auto Mode", autoChooser);
         //turretCalibrationCommand.ignoringDisable(true).schedule();
         FollowPathCommand.warmupCommand().schedule();
@@ -127,7 +126,7 @@ public class RobotContainer {
             })
         );
 
-        ps5Controller.circle().whileTrue(
+        ps5Controller.R2().whileTrue(
             turret.runEnd(
                 () -> {
                     ps5Controller.setRumble(RumbleType.kBothRumble, 1);
@@ -137,10 +136,11 @@ public class RobotContainer {
                     double targetSpeed = turret.m_shooterSpeedMap.get(virtualDist);
                     double targetAngle = turret.m_hoodAngleMap.get(virtualDist);
 
-                    turret.setShooterVelocity(targetSpeed);
-                    turret.setHoodAngle(targetAngle);
+                    //turret.setShooterVelocity(targetSpeed);
+                    //turret.setHoodAngle(targetAngle);
 
-                    turret.setShooterVelocity(turret.m_shooterSpeedMap.get(virtualDist));
+                    //turret.setShooterVelocity(turret.m_shooterSpeedMap.get(virtualDist));
+                    turret.setShooterVelocity(100);
                     turret.setHoodAngle(turret.m_hoodAngleMap.get(virtualDist));
             
                     if (turret.isShooterAtSpeed(turret.m_shooterSpeedMap.get(virtualDist))) {
@@ -157,19 +157,19 @@ public class RobotContainer {
                 }
             )
         );
-        ps5Controller.triangle().whileTrue(intake.runIntakeCommand(30.0));
+        ps5Controller.L2().whileTrue(intake.runIntakeCommand(30.0));
         ps5Controller.square().whileTrue(
             turret.runEnd(
                 () -> turret.setHopperSpeed(20),
                 () -> turret.setHopperSpeed(0))
         );
 
-        ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
-        ps5Controller.povRight().whileTrue(turret.goToAngle(90));
+        //ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
+        //ps5Controller.povRight().whileTrue(turret.goToAngle(90));
         //ps5Controller.povDown().whileTrue(turret.goToAngle(0));
         
-        ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(-7.80));
-        ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(0.05));
+        //ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(-7.80));
+        //ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(0.05));
 
 
         RobotModeTriggers.disabled().onTrue(
@@ -202,8 +202,21 @@ public class RobotContainer {
         ps5Controller.start().and(ps5Controller.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         ps5Controller.start().and(ps5Controller.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));*/
 
-        // Reset the field-centric heading on left bumper press.
-        ps5Controller.L1().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+   ps5Controller.L1().onTrue(
+    Commands.either(
+        alignment.toTrench1AS().andThen(alignment.toNeutralZoneFromT1()),
+        alignment.toNZTrench1().andThen(alignment.toT1FromNZ()),
+        () -> PoseSubsystem.getCurrentPose().getX() < 4.5
+    )
+);
+
+ps5Controller.R1().onTrue(
+    Commands.either(
+        alignment.toTrench2AS().andThen(alignment.toNeutralZoneFromT2()),
+        alignment.toNZTrench2().andThen(alignment.toT2FromNZ()),
+        () -> PoseSubsystem.getCurrentPose().getX() < 4.5
+    )
+);
 
         //drivetrain.registerTelemetry(logger::telemeterize);
         System.out.println(
@@ -244,12 +257,13 @@ public class RobotContainer {
         Rotation2d relativeRot = targetRot.minus(robotPose.getRotation());
         double aimAngle = Math.IEEEremainder(relativeRot.getDegrees(), 360.0);
         double robotSpinRPS = drivetrain.getState().Speeds.omegaRadiansPerSecond / (2 * Math.PI);
-        double counteractedSpinRPS = -robotSpinRPS;
+        double counteractedSpinRPS = -robotSpinRPS; //for later
 
         turret.moveTurretAngle(-aimAngle / 360.0);
         //System.out.println("Robot Speed (m/s): " + robotVel.vxMetersPerSecond);
         return virtualDist; 
     }
+
 
     public Command getAutonomousCommand() {
         /* Run the path selected from the auto chooser */
