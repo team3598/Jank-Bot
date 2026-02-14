@@ -64,7 +64,6 @@ public class RobotContainer {
     private boolean isShooting = false;
     private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, PoseSubsystem);
 
-
     public RobotContainer() {
         configureBindings();
         NamedCommands.registerCommand("IntakeOn", intake.beginIntakeCommand());
@@ -75,7 +74,7 @@ public class RobotContainer {
  
         autoChooser = AutoBuilder.buildAutoChooser("intaketest");
         
-        
+
         SmartDashboard.putData("Auto Mode", autoChooser);
         //turretCalibrationCommand.ignoringDisable(true).schedule();
         FollowPathCommand.warmupCommand().schedule();

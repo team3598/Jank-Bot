@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.1486239620403325,
+        "x": 5.9,
         "y": 7.4
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.7857264791808767,
-        "y": 7.396596383267314
+        "x": 6.676844621955128,
+        "y": 7.397518316883309
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 5.9,
+        "x": 3.375,
         "y": 7.4
       },
       "prevControl": {
-        "x": 5.6553175035238565,
-        "y": 7.476747435887661
+        "x": 2.3360921604111233,
+        "y": 7.296234461583951
       },
       "nextControl": {
-        "x": 7.18377210862363,
-        "y": 6.997330340257648
+        "x": 3.6713303050580874,
+        "y": 7.429597306403533
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 6.570047449584817,
-        "y": 3.9005100830367736
+        "x": 2.3,
+        "y": 3.75
       },
       "prevControl": {
-        "x": 6.5107111747895345,
-        "y": 4.1600283246835525
+        "x": 2.087485552962634,
+        "y": 3.8816723577688297
       },
       "nextControl": null,
       "isLocked": false,
@@ -47,7 +47,14 @@
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "AlignToTower",
+      "waypointRelativePos": 2.0,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
@@ -58,7 +65,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": 0.0
   },
   "reversed": false,
   "folder": null,
