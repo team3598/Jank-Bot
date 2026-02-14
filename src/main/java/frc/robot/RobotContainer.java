@@ -169,7 +169,7 @@ public class RobotContainer {
                 alignment.toNZTrench2().andThen(alignment.toT2FromNZ()),
                 () -> PoseSubsystem.getCurrentPose().getX() < 4.5
             )
-        );  
+        );
     
         //ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
         //ps5Controller.povRight().whileTrue(turret.goToAngle(90));
