@@ -6,6 +6,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -23,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -100,7 +102,7 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        turret.setDefaultCommand(
+        /*turret.setDefaultCommand(
             turret.run(() -> {
                 if (isAiming) {
                     turret.autoAim(PoseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed());
@@ -171,6 +173,29 @@ public class RobotContainer {
             )
         );
     
+        ps5Controller.povUp().onTrue(
+            Commands.run(
+                () -> intake.setIntakeVerticalPosition(7.95))
+        );
+
+        ps5Controller.povDown().onTrue(
+            Commands.run(
+                () -> intake.setIntakeVerticalPosition(0.00))
+        );*/
+
+        ps5Controller.L1().onTrue(Commands.runOnce(SignalLogger::start));
+ps5Controller.R1().onTrue(Commands.runOnce(SignalLogger::stop));
+
+/*
+ * Joystick Y = quasistatic forward
+ * Joystick A = quasistatic reverse
+ * Joystick B = dynamic forward
+ * Joystick X = dyanmic reverse
+ */
+ps5Controller.triangle().whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+ps5Controller.cross().whileTrue(drivetrain.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+ps5Controller.circle().whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kForward));
+ps5Controller.square().whileTrue(drivetrain.sysIdDynamic(SysIdRoutine.Direction.kReverse));
         //ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
         //ps5Controller.povRight().whileTrue(turret.goToAngle(90));
         //ps5Controller.povDown().whileTrue(turret.goToAngle(0));
