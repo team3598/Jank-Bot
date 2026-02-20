@@ -186,10 +186,10 @@ public class TurretSubsystem extends SubsystemBase {
         double robotSpinRPS = fieldRelativeSpeeds.omegaRadiansPerSecond / (2 * Math.PI);
         
         double finalTarget = aimAngle + (-robotSpinRPS * rotationLookAhead * 360.0);
-        finalTarget = MathUtil.inputModulus(finalTarget, -370, 10);
+        finalTarget = MathUtil.inputModulus(finalTarget, -360, 0);
 
-        if (finalTarget > 10) finalTarget = 10;
-        if (finalTarget < -370) finalTarget = -370;
+        if (finalTarget > 0) finalTarget = 0;
+        if (finalTarget < -360) finalTarget = -360;
 
         moveTurretAngle(((finalTarget / 360.0)));
         
@@ -237,7 +237,7 @@ public class TurretSubsystem extends SubsystemBase {
         turretHood.setControl(hoodMMRequest.withPosition(degrees/360));
     }
 
-    public void setHopperSpeed(double rps) {
+    public void setHopperVelocity(double rps) {
         turretHopper.setControl(velocity.withVelocity(rps));
     }
     
@@ -247,6 +247,11 @@ public class TurretSubsystem extends SubsystemBase {
 
     public double getFlywheelSpeed(){
         return turretShooter.getVelocity().getValueAsDouble();
+    }
+
+    public double getHopperSpeed()
+    {
+        return turretHopper.getVelocity().getValueAsDouble();
     }
 
     public Command goToHoodAngle(double degrees) {
@@ -269,7 +274,7 @@ public class TurretSubsystem extends SubsystemBase {
         ).andThen(
             this.run(()->{
                 setFeederVelocity(100);
-                setHopperSpeed(50);
+                setHopperVelocity(50);
             })
         ).finallyDo(
             (interrupted)->{

@@ -17,10 +17,12 @@ public class TurretCalibrationCommand extends Command {
   private final PoseSubsystem Pose;
   public double hoodTunerNumber;
   public double flywheelTunerNumber;
+  public long waitTimeNumber;
   private Translation2d hubPosition = new Translation2d(4.625, 4.035);
 
   private static final String keyHood = "Tuning/Hood Angle (Deg)"; //the angle of the hood
-    private static final String keyFlywheel = "Tuning/Flywheel RPS"; //current flywheel spd
+  private static final String keyFlywheel = "Tuning/Flywheel RPS"; //current flywheel spd
+  private static final String keyWaitTime = "Tuning/Wait Time (killiam william)";
 
   public TurretCalibrationCommand(TurretSubsystem turret, PoseSubsystem pose) {
     Turret = turret;
@@ -31,12 +33,14 @@ public class TurretCalibrationCommand extends Command {
   public void initialize() {
     SmartDashboard.putNumber(keyHood, 0);
     SmartDashboard.putNumber(keyFlywheel, 10);
+    SmartDashboard.putNumber(keyWaitTime, 20);
   }
 
   @Override
   public void execute() {
     hoodTunerNumber = SmartDashboard.getNumber(keyHood, 0);
     flywheelTunerNumber = SmartDashboard.getNumber(keyFlywheel, 10);
+    waitTimeNumber = (long) SmartDashboard.getNumber(keyWaitTime, 20);
 
     SmartDashboard.putNumber("Flywheel Speed", Turret.getFlywheelSpeed());
     SmartDashboard.putNumber("Feeder Speed: ", Turret.getFeederSpeed());

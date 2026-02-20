@@ -5,6 +5,7 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.wpilibj2.command.Commands.runEnd;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -132,11 +133,21 @@ public class RobotContainer {
 
                     turret.setShooterVelocity(targetSpeed);
                     //turret.setShooterVelocity(turretCalibrationCommand.flywheelTunerNumber);
-                    if (turret.isShooterAtSpeed(turretCalibrationCommand.flywheelTunerNumber))
+                    if (turret.isShooterAtSpeed(targetSpeed))
                     {   
+                        
                         turret.setHoodAngle(turretCalibrationCommand.hoodTunerNumber);
                         turret.setFeederVelocity(90);
-                        turret.setHopperSpeed(50); //sext feeder to 90 and hopper to 35 later
+                        turret.setHopperVelocity(50);
+
+                        try { Thread.sleep(20); } catch (InterruptedException e) {}
+
+                        if (turret.getHopperSpeed() <= 5.0)
+                        {   
+                           turret.setHopperVelocity(-30); 
+                           try { Thread.sleep(turretCalibrationCommand.waitTimeNumber); } catch (InterruptedException e) {}
+                           turret.setHopperVelocity(50);
+                        }
                     }
                 },
                 () -> {
@@ -150,11 +161,6 @@ public class RobotContainer {
         );
 
         ps5Controller.L2().whileTrue(intake.runIntakeCommand(40.0));
-        ps5Controller.square().whileTrue(
-            turret.runEnd(
-                () -> turret.setHopperSpeed(20),
-                () -> turret.setHopperSpeed(0))
-        );
 
         ps5Controller.L1().onTrue(
             Commands.either(
@@ -174,6 +180,18 @@ public class RobotContainer {
         
         ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(0.05));
         ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-5.477));
+        ps5Controller.povLeft().whileTrue(
+            runEnd(
+                () -> turret.setFeederVelocity(70),
+                () -> turret.setFeederVelocity(0)
+            ));
+
+        ps5Controller.povRight().whileTrue(
+            runEnd(
+                () -> turret.setHopperVelocity(70),
+                () -> turret.setHopperVelocity(50)
+            ));
+
 
         //ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
         //ps5Controller.povRight().whileTrue(turret.goToAngle(90));
@@ -182,18 +200,27 @@ public class RobotContainer {
 
 
         RobotModeTriggers.disabled().onTrue(
-            new InstantCommand(() -> LimelightHelpers.SetThrottle("limelight-bright", 100))
+            new InstantCommand(() -> {
+                LimelightHelpers.SetThrottle("limelight-fleft", 100);
+                LimelightHelpers.SetThrottle("limelight-fright", 100);
+            })
             .ignoringDisable(true) 
         );
 
         RobotModeTriggers.teleop().onTrue(
-            new InstantCommand(() -> LimelightHelpers.SetThrottle("limelight-bright", 0))
-            .ignoringDisable(true)
+            new InstantCommand(() -> {
+                LimelightHelpers.SetThrottle("limelight-fleft", 0);
+                LimelightHelpers.SetThrottle("limelight-fright", 0);
+            })
+            .ignoringDisable(true) 
         );
 
         RobotModeTriggers.autonomous().onTrue(
-            new InstantCommand(() -> LimelightHelpers.SetThrottle("limelight-bright", 0))
-            .ignoringDisable(true)
+            new InstantCommand(() -> {
+                LimelightHelpers.SetThrottle("limelight-fleft", 0);
+                LimelightHelpers.SetThrottle("limelight-fright", 0);
+            })
+            .ignoringDisable(true) 
         );  
     }
     
