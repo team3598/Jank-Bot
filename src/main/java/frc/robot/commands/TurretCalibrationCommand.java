@@ -29,14 +29,14 @@ public class TurretCalibrationCommand extends Command {
 
   @Override
   public void initialize() {
-    SmartDashboard.putNumber(keyHood, 20.0);
-    SmartDashboard.putNumber(keyFlywheel, 32.5);
+    SmartDashboard.putNumber(keyHood, 0);
+    SmartDashboard.putNumber(keyFlywheel, 10);
   }
 
   @Override
   public void execute() {
-    hoodTunerNumber = SmartDashboard.getNumber(keyHood, 20.0);
-    flywheelTunerNumber = SmartDashboard.getNumber(keyFlywheel, 32.5);
+    hoodTunerNumber = SmartDashboard.getNumber(keyHood, 0);
+    flywheelTunerNumber = SmartDashboard.getNumber(keyFlywheel, 10);
 
     SmartDashboard.putNumber("Flywheel Speed", Turret.getFlywheelSpeed());
     SmartDashboard.putNumber("Feeder Speed: ", Turret.getFeederSpeed());

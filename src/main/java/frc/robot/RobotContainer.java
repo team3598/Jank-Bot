@@ -76,7 +76,7 @@ public class RobotContainer {
         
 
         SmartDashboard.putData("Auto Mode", autoChooser);
-        //turretCalibrationCommand.ignoringDisable(true).schedule();
+        turretCalibrationCommand.ignoringDisable(true).schedule();
         FollowPathCommand.warmupCommand().schedule();
     }
     
@@ -106,7 +106,7 @@ public class RobotContainer {
                     turret.autoAim(PoseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed());
                 } else {
                     turret.stopMotors();
-                    turret.setHoodAngle(-0.05);
+                    turret.setHoodAngle(0);
                 }
             })
         );
@@ -127,15 +127,16 @@ public class RobotContainer {
                         PoseSubsystem.getCurrentPose(), 
                         drivetrain.getFieldRelativeSpeed()
                     ); 
-
                     double targetSpeed = turret.m_shooterSpeedMap.get(virtualDist);
                     //hood's already set in turret subsystem
 
                     turret.setShooterVelocity(targetSpeed);
-            
-                    if (turret.isShooterAtSpeed(targetSpeed)) {
-                        turret.setFeederVelocity(80);
-                        turret.setHopperSpeed(35);
+                    //turret.setShooterVelocity(turretCalibrationCommand.flywheelTunerNumber);
+                    if (turret.isShooterAtSpeed(turretCalibrationCommand.flywheelTunerNumber))
+                    {   
+                        turret.setHoodAngle(turretCalibrationCommand.hoodTunerNumber);
+                        turret.setFeederVelocity(90);
+                        turret.setHopperSpeed(50); //sext feeder to 90 and hopper to 35 later
                     }
                 },
                 () -> {
@@ -148,7 +149,7 @@ public class RobotContainer {
             )
         );
 
-        ps5Controller.L2().whileTrue(intake.runIntakeCommand(30.0));
+        ps5Controller.L2().whileTrue(intake.runIntakeCommand(40.0));
         ps5Controller.square().whileTrue(
             turret.runEnd(
                 () -> turret.setHopperSpeed(20),
@@ -170,7 +171,10 @@ public class RobotContainer {
                 () -> PoseSubsystem.getCurrentPose().getX() < 4.5
             )
         );
-    
+        
+        ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(0.05));
+        ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-5.477));
+
         //ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
         //ps5Controller.povRight().whileTrue(turret.goToAngle(90));
         //ps5Controller.povDown().whileTrue(turret.goToAngle(0));

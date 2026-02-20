@@ -18,7 +18,7 @@ import frc.robot.LimelightHelpers;
 public class PoseSubsystem extends SubsystemBase {
      final Field2d field = new Field2d();
     private final CommandSwerveDrivetrain drivetrain;
-        private final List<String> limelightNames = List.of("limelight-bleft", "limelight-bright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
+        private final List<String> limelightNames = List.of("limelight-fleft");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
         private int loopCounter = 0;
 
     
