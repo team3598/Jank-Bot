@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -16,7 +17,9 @@ import frc.robot.LimelightHelpers;
 
 
 public class PoseSubsystem extends SubsystemBase {
-     final Field2d field = new Field2d();
+    public static double timeMS = Timer.getFPGATimestamp();
+    final Field2d field = new Field2d();
+
     private final CommandSwerveDrivetrain drivetrain;
         private final List<String> limelightNames = List.of("limelight-fleft");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
         private int loopCounter = 0;
@@ -69,6 +72,7 @@ public class PoseSubsystem extends SubsystemBase {
     
     @Override
     public void periodic() {
+        timeMS = Timer.getFPGATimestamp(); //20 ms
         String activeCamera = limelightNames.get(loopCounter % limelightNames.size()); //i do this because it is really taxing on the RoboRio to calculate everything and process two limelights at the same time. by doing this, it's switching back and forth between the two which should give me some less lag
         loopCounter++;
         updateVision(activeCamera);

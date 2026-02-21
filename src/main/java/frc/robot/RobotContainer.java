@@ -63,7 +63,12 @@ public class RobotContainer {
     private final PoseSubsystem PoseSubsystem = new PoseSubsystem(drivetrain);
     private boolean isAiming = false;
     private boolean isShooting = false;
+    private double unjammingPower = 1.0;
+    private double jamStartTime = 0.0;
     private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, PoseSubsystem);
+
+    public Translation2d hubPosition = new Translation2d(4.625, 4.035);
+
 
     public RobotContainer() {
         configureBindings();
@@ -71,8 +76,6 @@ public class RobotContainer {
         NamedCommands.registerCommand("IntakeOff", intake.endIntakeCommand());
         NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
         
-
- 
         autoChooser = AutoBuilder.buildAutoChooser("intaketest");
         
 
@@ -104,7 +107,7 @@ public class RobotContainer {
         turret.setDefaultCommand(
             turret.run(() -> {
                 if (isAiming) {
-                    turret.autoAim(PoseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed());
+                    turret.autoAim(PoseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), hubPosition);
                 } else {
                     turret.stopMotors();
                     turret.setHoodAngle(0);
@@ -123,30 +126,30 @@ public class RobotContainer {
                 () -> {
                     ps5Controller.setRumble(RumbleType.kBothRumble, 1);
                     isShooting = true;
-                    
+
                     double virtualDist = turret.autoAim(
                         PoseSubsystem.getCurrentPose(), 
-                        drivetrain.getFieldRelativeSpeed()
+                        drivetrain.getFieldRelativeSpeed(),
+                        hubPosition
                     ); 
-                    double targetSpeed = turret.m_shooterSpeedMap.get(virtualDist);
-                    //hood's already set in turret subsystem
+
+                    double targetSpeed = turret.m_shooterSpeedMap.get(virtualDist); //hood's already set in turret subsystem
 
                     turret.setShooterVelocity(targetSpeed);
                     //turret.setShooterVelocity(turretCalibrationCommand.flywheelTunerNumber);
-                    if (turret.isShooterAtSpeed(targetSpeed))
+                    if (turret.isShooterAtSpeed(targetSpeed) && turret.isTurretAligned(1.5))
                     {   
-                        
-                        turret.setHoodAngle(turretCalibrationCommand.hoodTunerNumber);
-                        turret.setFeederVelocity(90);
-                        turret.setHopperVelocity(50);
-
-                        try { Thread.sleep(20); } catch (InterruptedException e) {}
-
-                        if (turret.getHopperSpeed() <= 5.0)
+                        if (Math.abs(turret.getHopperSpeed()) <= 5.0)
                         {   
-                           turret.setHopperVelocity(-30); 
-                           try { Thread.sleep((long) 37.5); } catch (InterruptedException e) {} //anti-jammer
-                           turret.setHopperVelocity(50);
+                            if (jamStartTime == 0) jamStartTime = PoseSubsystem.timeMS;
+                            double timeJammed = PoseSubsystem.timeMS - jamStartTime;
+                            unjammingPower = -30 - (timeJammed * 1.1);
+                            turret.setHopperVelocity(unjammingPower); 
+                            //double targetTime = PoseSubsystem.timeMS + 40;
+                        } else {
+                            turret.setHoodAngle(0);
+                            turret.setFeederVelocity(90);
+                            turret.setHopperVelocity(50);
                         }
                     }
                 },

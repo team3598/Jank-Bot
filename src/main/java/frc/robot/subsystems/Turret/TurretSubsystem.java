@@ -5,6 +5,7 @@
 package frc.robot.subsystems.Turret;
 
 import frc.robot.SimpleCRT;
+import frc.robot.subsystems.PoseSubsystem;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -23,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
@@ -49,14 +51,14 @@ public class TurretSubsystem extends SubsystemBase {
     public InterpolatingDoubleTreeMap m_shooterSpeedMap = new InterpolatingDoubleTreeMap();
     public InterpolatingDoubleTreeMap m_hoodAngleMap = new InterpolatingDoubleTreeMap();
     
-    public Translation2d hubPosition = new Translation2d(4.625, 4.035);
     private final double shooterWheelRadius = Units.inchesToMeters(2.0); 
     
     private final double fuelEfficiency = 0.35; 
     private final double maxShift = 2; 
     private final double rotationLookAhead = 0.1;
+    private double currentAimTargetRotations = 0;
 
-    private final SimpleCRT crtSolver = new SimpleCRT(10, 11, 100, -20.0, 360.0);
+    private final SimpleCRT crtSolver = new SimpleCRT(10, 11, 100, -10.0, 360.0);
     
     public TurretSubsystem() {
         seedDistMaps();
@@ -128,48 +130,48 @@ public class TurretSubsystem extends SubsystemBase {
         double solvedAngle = crtSolver.getTrueAngle(posA, posB);
 
         if (Double.isNaN(solvedAngle)) {
-            System.out.println("🚨 CRT FAILURE: Sensors disagree or are out of bounds!");
+            System.out.println("CRT FAILURE: Sensors disagree or are out of bounds!");
             turretTurner.setPosition(0.0); 
         } else {
-            System.out.println("✅ CRT SUCCESS -> Angle: " + String.format("%.2f", solvedAngle));
+            System.out.println("CRT SUCCESS -> Angle: " + String.format("%.2f", solvedAngle));
             
             turretTurner.setPosition(-solvedAngle / 360.0);
         }
     }
 
     public void seedDistMaps() {
-        m_shooterSpeedMap.put(2.0, 11.25);
+        m_shooterSpeedMap.put(2.0, 12.25);
         m_hoodAngleMap.put(2.0, 0.0);
 
-        m_shooterSpeedMap.put(2.5, 11.75);
+        m_shooterSpeedMap.put(2.5, 12.75);
         m_hoodAngleMap.put(2.5, 0.0);
 
-        m_shooterSpeedMap.put(3.0, 12.25);
+        m_shooterSpeedMap.put(3.0, 13.25);
         m_hoodAngleMap.put(3.0, 0.0);
 
-        m_shooterSpeedMap.put(3.5, 13.25);
+        m_shooterSpeedMap.put(3.5, 14.25);
         m_hoodAngleMap.put(3.5, 0.0);
 
-        m_shooterSpeedMap.put(4.0, 14.25);
+        m_shooterSpeedMap.put(4.0, 15.25);
         m_hoodAngleMap.put(4.0, 2.5);
 
-        m_shooterSpeedMap.put(4.5, 15.25);
+        m_shooterSpeedMap.put(4.5, 16.25);
         m_hoodAngleMap.put(4.5, 5.0);
 
-        m_shooterSpeedMap.put(5.0, 16.5);
+        m_shooterSpeedMap.put(5.0, 17.5);
         m_hoodAngleMap.put(5.0, 5.5);
     }
 
-    public double autoAim(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds) {
-        double realDist = robotPose.getTranslation().getDistance(hubPosition);
+    public double autoAim(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, Translation2d targetPosition) {
+        double realDist = robotPose.getTranslation().getDistance(targetPosition);
         double t = calculateTimeOfFlight(realDist);
-        if (t > 1.0) t = 1.0; 
+        if (t > 1.0) t = 1.0;
         double shiftX = -fieldRelativeSpeeds.vxMetersPerSecond * t;
         double shiftY = -fieldRelativeSpeeds.vyMetersPerSecond * t;
         shiftX = Math.max(-maxShift, Math.min(maxShift, shiftX));
         shiftY = Math.max(-maxShift, Math.min(maxShift, shiftY));
-        Translation2d virtualHub = new Translation2d(hubPosition.getX() + shiftX, hubPosition.getY() + shiftY);
-        Translation2d robotToTarget = hubPosition.minus(robotPose.getTranslation());
+        Translation2d virtualHub = new Translation2d(targetPosition.getX() + shiftX, targetPosition.getY() + shiftY);
+        Translation2d robotToTarget = targetPosition.minus(robotPose.getTranslation());
         Rotation2d angleToTarget = new Rotation2d(robotToTarget.getX(), robotToTarget.getY());
         //System.out.println(angleToTarget.getDegrees());
         double velTowardsTarget = (fieldRelativeSpeeds.vxMetersPerSecond * angleToTarget.getCos()) + (fieldRelativeSpeeds.vyMetersPerSecond * angleToTarget.getSin());
@@ -213,7 +215,14 @@ public class TurretSubsystem extends SubsystemBase {
         return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 0.5;
     }
 
+    public boolean isTurretAligned(double toleranceDegrees){
+        double currentAimedPosition = turretTurner.getPosition().getValueAsDouble();
+        double error = Math.abs(currentAimedPosition - currentAimTargetRotations) * 360;
+        return error < toleranceDegrees;
+    }
+
     public void moveTurretAngle(double turretRotations) {
+        this.currentAimTargetRotations = turretRotations;
         turretTurner.setControl(turnerMMRequest.withPosition(turretRotations));
     }
     
@@ -240,7 +249,7 @@ public class TurretSubsystem extends SubsystemBase {
     public void setHopperVelocity(double rps) {
         turretHopper.setControl(velocity.withVelocity(rps));
     }
-    
+
     public double getFeederSpeed(){
         return turretFeeder.getVelocity().getValueAsDouble();
     }
