@@ -87,7 +87,7 @@ public class RobotContainer {
                 double currentMaxSpeed = MaxSpeed;
                 
                 if (isShooting) {
-                    currentMaxSpeed = MaxSpeed / 3.0; 
+                    currentMaxSpeed = MaxSpeed / 2.0; 
                 }
 
              return drive.withVelocityX(-ps5Controller.getLeftY() * currentMaxSpeed)
@@ -145,7 +145,7 @@ public class RobotContainer {
                         if (turret.getHopperSpeed() <= 5.0)
                         {   
                            turret.setHopperVelocity(-30); 
-                           try { Thread.sleep(turretCalibrationCommand.waitTimeNumber); } catch (InterruptedException e) {}
+                           try { Thread.sleep((long) 37.5); } catch (InterruptedException e) {} //anti-jammer
                            turret.setHopperVelocity(50);
                         }
                     }
@@ -179,7 +179,7 @@ public class RobotContainer {
         );
         
         ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(0.05));
-        ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-5.477));
+        ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-7.1));
         ps5Controller.povLeft().whileTrue(
             runEnd(
                 () -> turret.setFeederVelocity(70),
@@ -189,7 +189,7 @@ public class RobotContainer {
         ps5Controller.povRight().whileTrue(
             runEnd(
                 () -> turret.setHopperVelocity(70),
-                () -> turret.setHopperVelocity(50)
+                () -> turret.setHopperVelocity(0)
             ));
 
 

@@ -164,8 +164,8 @@ public class TurretSubsystem extends SubsystemBase {
         double realDist = robotPose.getTranslation().getDistance(hubPosition);
         double t = calculateTimeOfFlight(realDist);
         if (t > 1.0) t = 1.0; 
-        double shiftX = -fieldRelativeSpeeds.vxMetersPerSecond * t*0;
-        double shiftY = -fieldRelativeSpeeds.vyMetersPerSecond * t*0;
+        double shiftX = -fieldRelativeSpeeds.vxMetersPerSecond * t;
+        double shiftY = -fieldRelativeSpeeds.vyMetersPerSecond * t;
         shiftX = Math.max(-maxShift, Math.min(maxShift, shiftX));
         shiftY = Math.max(-maxShift, Math.min(maxShift, shiftY));
         Translation2d virtualHub = new Translation2d(hubPosition.getX() + shiftX, hubPosition.getY() + shiftY);

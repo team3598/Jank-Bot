@@ -49,7 +49,7 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeVConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         intakeVConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = -0.05; 
         intakeVConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        intakeVConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -5.3; 
+        intakeVConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -7.1; 
         intakeVConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
         var intake_status = m_intake.getConfigurator().apply(configs);
