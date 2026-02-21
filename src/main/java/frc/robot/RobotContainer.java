@@ -139,11 +139,12 @@ public class RobotContainer {
                     //turret.setShooterVelocity(turretCalibrationCommand.flywheelTunerNumber);
                     if (turret.isShooterAtSpeed(targetSpeed) && turret.isTurretAligned(1.5))
                     {   
-                        if (Math.abs(turret.getHopperSpeed()) <= 5.0)
+                        try { Thread.sleep((long) 50); } catch (InterruptedException e) {} // so hopper catches up to speed
+                        if (Math.abs(turret.getHopperSpeed()) <= 10.0)
                         {   
                             if (jamStartTime == 0) jamStartTime = PoseSubsystem.timeMS;
                             double timeJammed = PoseSubsystem.timeMS - jamStartTime;
-                            unjammingPower = -30 - (timeJammed * 1.1);
+                            unjammingPower = -20 - (Math.min(1, timeJammed * 1.1));
                             turret.setHopperVelocity(unjammingPower); 
                             //double targetTime = PoseSubsystem.timeMS + 40;
                         } else {
