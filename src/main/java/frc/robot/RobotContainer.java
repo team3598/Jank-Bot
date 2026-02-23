@@ -25,6 +25,8 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -54,7 +56,7 @@ public class RobotContainer {
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandPS5Controller ps5Controller = new CommandPS5Controller(0);
-
+    private final PS4Controller HIDController = new PS4Controller(1);
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     private IntakeSubsystem intake = new IntakeSubsystem();
@@ -63,10 +65,8 @@ public class RobotContainer {
     private final PoseSubsystem PoseSubsystem = new PoseSubsystem(drivetrain);
     private boolean isAiming = false;
     private boolean isShooting = false;
-    private double unjammingPower = 1.0;
-    private double jamStartTime = 0.0;
     private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, PoseSubsystem);
-
+    private boolean nearTrench = false;
     public Translation2d hubPosition = new Translation2d(4.625, 4.035);
 
 
@@ -75,8 +75,15 @@ public class RobotContainer {
         NamedCommands.registerCommand("IntakeOn", intake.beginIntakeCommand());
         NamedCommands.registerCommand("IntakeOff", intake.endIntakeCommand());
         NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
-        
-        autoChooser = AutoBuilder.buildAutoChooser("intaketest");
+        NamedCommands.registerCommand("ShootAtHub", turret.getAutoAimAndShootCommand(PoseSubsystem, drivetrain, hubPosition, nearTrench));
+
+        NamedCommands.registerCommand("StopShooting", turret.runOnce(() -> {
+            turret.stopMotors();
+            turret.stopFeeding();
+            turret.setHoodPosition(-0.3);
+        }));
+
+        autoChooser = AutoBuilder.buildAutoChooser("T1ShootNeutral");
         
 
         SmartDashboard.putData("Auto Mode", autoChooser);
@@ -108,9 +115,14 @@ public class RobotContainer {
             turret.run(() -> {
                 if (isAiming) {
                     turret.autoAim(PoseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), hubPosition);
+                    if (PoseSubsystem.getCurrentPose().getX() >= 3.5 && PoseSubsystem.getCurrentPose().getX() <= 5.75) {
+                        nearTrench = true;
+                    } else {
+                        nearTrench = false;
+                    }
                 } else {
                     turret.stopMotors();
-                    turret.setHoodAngle(0);
+                    turret.setHoodPosition(-0.3);
                 }
             })
         );
@@ -122,45 +134,20 @@ public class RobotContainer {
         );
 
         ps5Controller.R2().whileTrue(
-            turret.runEnd(
-                () -> {
-                    ps5Controller.setRumble(RumbleType.kBothRumble, 1);
-                    isShooting = true;
-
-                    double virtualDist = turret.autoAim(
-                        PoseSubsystem.getCurrentPose(), 
-                        drivetrain.getFieldRelativeSpeed(),
-                        hubPosition
-                    ); 
-
-                    double targetSpeed = turret.m_shooterSpeedMap.get(virtualDist); //hood's already set in turret subsystem
-
-                    turret.setShooterVelocity(targetSpeed);
-                    //turret.setShooterVelocity(turretCalibrationCommand.flywheelTunerNumber);
-                    if (turret.isShooterAtSpeed(targetSpeed) && turret.isTurretAligned(1.5))
-                    {   
-                        try { Thread.sleep((long) 50); } catch (InterruptedException e) {} // so hopper catches up to speed
-                        if (Math.abs(turret.getHopperSpeed()) <= 10.0)
-                        {   
-                            if (jamStartTime == 0) jamStartTime = PoseSubsystem.timeMS;
-                            double timeJammed = PoseSubsystem.timeMS - jamStartTime;
-                            unjammingPower = -20 - (Math.min(1, timeJammed * 1.1));
-                            turret.setHopperVelocity(unjammingPower); 
-                            //double targetTime = PoseSubsystem.timeMS + 40;
-                        } else {
-                            turret.setHoodAngle(0);
-                            turret.setFeederVelocity(90);
-                            turret.setHopperVelocity(50);
-                        }
+            turret.getAutoAimAndShootCommand(PoseSubsystem, drivetrain, hubPosition, nearTrench)
+            .alongWith(
+                Commands.startEnd(
+                    () -> {
+                        isShooting = true;
+                        HIDController.setRumble(RumbleType.kBothRumble, 1);
+                        HIDController.setOutput(1, true);
+                    },
+                    () -> {
+                        isShooting = false;
+                        HIDController.setRumble(RumbleType.kBothRumble, 0);
+                        HIDController.setOutput(0, false);
                     }
-                },
-                () -> {
-                    ps5Controller.setRumble(RumbleType.kBothRumble, 0);
-                    isShooting = false;
-                    turret.stopMotors();
-                    turret.setHoodAngle(-0.3);
-                    intake.setIntakeVelocity(0);
-                }
+                )
             )
         );
 
@@ -184,20 +171,14 @@ public class RobotContainer {
         
         ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(0.05));
         ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-7.1));
+        
         ps5Controller.povLeft().whileTrue(
-            runEnd(
-                () -> turret.setFeederVelocity(70),
-                () -> turret.setFeederVelocity(0)
-            ));
+            turret.runEnd(
+                () -> turret.setHoodPosition(13.0), 
+                () -> turret.setHoodPosition(0)
+                )
+        );
 
-        ps5Controller.povRight().whileTrue(
-            runEnd(
-                () -> turret.setHopperVelocity(70),
-                () -> turret.setHopperVelocity(0)
-            ));
-
-
-        //ps5Controller.povLeft().whileTrue(turret.goToAngle(-90));
         //ps5Controller.povRight().whileTrue(turret.goToAngle(90));
         //ps5Controller.povDown().whileTrue(turret.goToAngle(0));
     
@@ -205,10 +186,10 @@ public class RobotContainer {
 
         RobotModeTriggers.disabled().onTrue(
             new InstantCommand(() -> {
-                LimelightHelpers.SetThrottle("limelight-fleft", 100);
-                LimelightHelpers.SetThrottle("limelight-fright", 100);
+                LimelightHelpers.SetThrottle("limelight-fleft", 200);
+                LimelightHelpers.SetThrottle("limelight-fright", 200);
             })
-            .ignoringDisable(true) 
+            .ignoringDisable(true)
         );
 
         RobotModeTriggers.teleop().onTrue(

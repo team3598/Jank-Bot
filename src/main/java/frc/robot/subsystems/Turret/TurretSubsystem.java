@@ -5,7 +5,9 @@
 package frc.robot.subsystems.Turret;
 
 import frc.robot.SimpleCRT;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.PoseSubsystem;
+import frc.robot.commands.Autos.*;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -29,6 +31,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class TurretSubsystem extends SubsystemBase {
@@ -57,6 +60,9 @@ public class TurretSubsystem extends SubsystemBase {
     private final double maxShift = 2; 
     private final double rotationLookAhead = 0.1;
     private double currentAimTargetRotations = 0;
+
+    private double jamStartTime = -1.0;
+    private double unjamEndTime = -1.0;
 
     private final SimpleCRT crtSolver = new SimpleCRT(10, 11, 100, -10.0, 360.0);
     
@@ -87,6 +93,8 @@ public class TurretSubsystem extends SubsystemBase {
         hopperConfig.Slot0.kP = 0;
         hopperConfig.Slot0.kV = 0.1;
         hopperConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        hopperConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+        hopperConfig.CurrentLimits.StatorCurrentLimit = 60.0;
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
         turnerConfig.Feedback.SensorToMechanismRatio = 41.66666; 
@@ -103,16 +111,15 @@ public class TurretSubsystem extends SubsystemBase {
         turnerConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
         final TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
-        hoodConfig.Feedback.SensorToMechanismRatio = 250.0; 
-        hoodConfig.MotionMagic.MotionMagicCruiseVelocity = 0.75; 
-        hoodConfig.MotionMagic.MotionMagicAcceleration = 1.0;  
+        hoodConfig.MotionMagic.MotionMagicCruiseVelocity = 4.0; 
+        hoodConfig.MotionMagic.MotionMagicAcceleration = 8.0;  
         hoodConfig.MotionMagic.MotionMagicJerk = 10.0;         
-        hoodConfig.Slot0.kP = 60; 
-        hoodConfig.Slot0.kD = 0.1; 
+        hoodConfig.Slot0.kP = 60;
+        hoodConfig.Slot0.kV = 0.3;
         hoodConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        hoodConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 0.25;
+        hoodConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 13;
         hoodConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        hoodConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -0.3; 
+        hoodConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -0.5; 
 
         turretTurner.getConfigurator().apply(turnerConfig);
         turretShooter.getConfigurator().apply(flywheelConfig);
@@ -140,26 +147,26 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public void seedDistMaps() {
-        m_shooterSpeedMap.put(2.0, 12.25);
+        m_shooterSpeedMap.put(2.0, 13.25); //13.25
         m_hoodAngleMap.put(2.0, 0.0);
 
-        m_shooterSpeedMap.put(2.5, 12.75);
-        m_hoodAngleMap.put(2.5, 0.0);
+        m_shooterSpeedMap.put(2.5, 13.75); //13.75
+        m_hoodAngleMap.put(2.5, 0.0); //3.5
 
-        m_shooterSpeedMap.put(3.0, 13.25);
-        m_hoodAngleMap.put(3.0, 0.0);
+        m_shooterSpeedMap.put(3.0, 14.25); //14.25
+        m_hoodAngleMap.put(3.0, 0.0); //5.0
 
-        m_shooterSpeedMap.put(3.5, 14.25);
+        m_shooterSpeedMap.put(3.5, 15.25); //15.25
         m_hoodAngleMap.put(3.5, 0.0);
 
-        m_shooterSpeedMap.put(4.0, 15.25);
-        m_hoodAngleMap.put(4.0, 2.5);
+        m_shooterSpeedMap.put(4.0, 16.25); //16.25
+        m_hoodAngleMap.put(4.0, 0.0);
 
-        m_shooterSpeedMap.put(4.5, 16.25);
-        m_hoodAngleMap.put(4.5, 5.0);
+        m_shooterSpeedMap.put(4.5, 17.25); //17.25
+        m_hoodAngleMap.put(4.5, 0.5);
 
-        m_shooterSpeedMap.put(5.0, 17.5);
-        m_hoodAngleMap.put(5.0, 5.5);
+        m_shooterSpeedMap.put(5.0, 18.5); //18.5
+        m_hoodAngleMap.put(5.0, 0.0);
     }
 
     public double autoAim(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, Translation2d targetPosition) {
@@ -173,10 +180,8 @@ public class TurretSubsystem extends SubsystemBase {
         Translation2d virtualHub = new Translation2d(targetPosition.getX() + shiftX, targetPosition.getY() + shiftY);
         Translation2d robotToTarget = targetPosition.minus(robotPose.getTranslation());
         Rotation2d angleToTarget = new Rotation2d(robotToTarget.getX(), robotToTarget.getY());
-        //System.out.println(angleToTarget.getDegrees());
         double velTowardsTarget = (fieldRelativeSpeeds.vxMetersPerSecond * angleToTarget.getCos()) + (fieldRelativeSpeeds.vyMetersPerSecond * angleToTarget.getSin());
         double virtualDist = realDist - (velTowardsTarget * t);
-        setHoodAngle(m_hoodAngleMap.get(virtualDist));
 
         double dx = virtualHub.getX() - robotPose.getX();
         double dy = virtualHub.getY() - robotPose.getY();
@@ -212,7 +217,7 @@ public class TurretSubsystem extends SubsystemBase {
     }   
 
     public boolean isShooterAtSpeed(double targetRPS) {
-        return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 0.5;
+        return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 1.5;
     }
 
     public boolean isTurretAligned(double toleranceDegrees){
@@ -221,6 +226,103 @@ public class TurretSubsystem extends SubsystemBase {
         return error < toleranceDegrees;
     }
 
+    public boolean runFeederWithUnjam() {
+        double currentTime = PoseSubsystem.timeMS;
+
+        if (unjamEndTime > 0 && currentTime < unjamEndTime) {
+            setHopperVelocity(-40);
+            setFeederVelocity(-20);
+            jamStartTime = -1.0; 
+            return true; 
+        }
+
+        unjamEndTime = -1.0; 
+
+        double currentAmps = turretHopper.getStatorCurrent().getValueAsDouble();
+    
+        if (currentAmps >= 50.0) {
+            if (jamStartTime < 0) {
+                jamStartTime = currentTime; 
+            }
+            if (currentTime - jamStartTime > 100.0) {
+                unjamEndTime = currentTime + 500.0; 
+                jamStartTime = -1.0; 
+            } else {
+                setFeederVelocity(90);
+                setHopperVelocity(50);
+            }
+        } else {
+            jamStartTime = -1.0; 
+            setFeederVelocity(90);
+            setHopperVelocity(50);
+        }
+        return false;
+    }
+
+    public void stopFeeding() {
+        unjamEndTime = -1.0;
+        jamStartTime = -1.0;
+        setFeederVelocity(0);
+        setHopperVelocity(0);
+    }
+
+    public Command getAutoAimAndShootCommand(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench) {
+        return this.runEnd(
+            () -> {
+                double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub);
+            
+                double targetSpeed = m_shooterSpeedMap.get(virtualDist);
+                setShooterVelocity(targetSpeed);
+
+                if (!nearTrench){
+                    setHoodPosition(m_hoodAngleMap.get(virtualDist));
+                } else {
+                    setHoodPosition(0);
+                }
+
+                if (isShooterAtSpeed(targetSpeed) && isTurretAligned(1.5)) {
+                    runFeederWithUnjam();
+                } else {
+                    stopFeeding(); 
+                }
+            },
+            () -> {
+                stopMotors();
+                stopFeeding();
+                setHoodPosition(-0.3);
+            }
+        );
+    }
+
+    public Command getAutoAimAndShootCommandCalibration(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench, DoubleSupplier hoodPosition, DoubleSupplier flywheelPower) {
+        return this.runEnd(
+            () -> {
+                double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub);
+            
+                double targetSpeed = m_shooterSpeedMap.get(virtualDist);
+                //setShooterVelocity(targetSpeed);
+                setShooterVelocity(flywheelPower.getAsDouble());
+
+                if (!nearTrench){
+                    //setHoodPosition(m_hoodAngleMap.get(virtualDist));
+                    setHoodPosition(hoodPosition.getAsDouble());
+                } else {
+                    setHoodPosition(0);
+                }
+
+                if (isShooterAtSpeed(flywheelPower.getAsDouble()) && isTurretAligned(1.5)) {
+                    runFeederWithUnjam();
+                } else {
+                    stopFeeding(); 
+                }
+            },
+            () -> {
+                stopMotors();
+                stopFeeding();
+                setHoodPosition(-0.3);
+            }
+        );
+    }
     public void moveTurretAngle(double turretRotations) {
         this.currentAimTargetRotations = turretRotations;
         turretTurner.setControl(turnerMMRequest.withPosition(turretRotations));
@@ -242,8 +344,8 @@ public class TurretSubsystem extends SubsystemBase {
         turretFeeder.setControl(velocity.withVelocity(rps));
     }
 
-    public void setHoodAngle(double degrees) {
-        turretHood.setControl(hoodMMRequest.withPosition(degrees/360));
+    public void setHoodPosition(double position) {
+        turretHood.setControl(hoodMMRequest.withPosition(position));
     }
 
     public void setHopperVelocity(double rps) {
@@ -266,7 +368,7 @@ public class TurretSubsystem extends SubsystemBase {
     public Command goToHoodAngle(double degrees) {
        return this.runEnd(
         () -> {
-                setHoodAngle(degrees);
+                setHoodPosition(degrees);
                 //System.out.println("hood on. desired degrees of hood: " + degrees);
         },
         () -> turretHood.stopMotor()
@@ -292,7 +394,7 @@ public class TurretSubsystem extends SubsystemBase {
             turretHopper.stopMotor();
             }
         );
-      }
+    }
 
     public Command goToAngle(double degrees) {
         return this.runEnd(
@@ -307,5 +409,6 @@ public class TurretSubsystem extends SubsystemBase {
         //double error = turretTurner.getClosedLoopError().getValueAsDouble();
         //System.out.println("Tracking Error: " + error);
         //System.out.println("Turret Degrees: " + turretTurner.getPosition().getValueAsDouble() * 360);
+        System.out.println(turretHood.getPosition().getValueAsDouble());
     }
 }

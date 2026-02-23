@@ -28,7 +28,13 @@ public class Robot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
-        CommandScheduler.getInstance().run(); 
+        CommandScheduler.getInstance().run();
+
+        if (FMSTracker.isAllianceHubActive()){
+            //System.out.println("hub on");
+        } else {
+            //System.out.println("hub off");
+        }
     }
 
     @Override

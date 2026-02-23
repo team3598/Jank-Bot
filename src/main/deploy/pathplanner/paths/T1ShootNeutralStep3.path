@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 3.4830555555555556,
+        "y": 7.380822222222222
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 3.0040400545461856,
+        "y": 6.526152253511148
+      },
+      "isLocked": false,
+      "linkedName": "t1shootneutralstep2"
+    },
+    {
+      "anchor": {
+        "x": 1.6489000000000003,
+        "y": 3.682277777777778
+      },
+      "prevControl": {
+        "x": 2.334832036297061,
+        "y": 5.21165345239806
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 180.0
+  },
+  "reversed": false,
+  "folder": "T1ShootNeutral",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 90.84000000000002
+  },
+  "useDefaultConstraints": true
+}

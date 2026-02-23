@@ -16,7 +16,7 @@ import com.pathplanner.lib.path.PathPlannerPath;
 
 public class Alignment{
     private final Pose2d towerPosition = new Pose2d(1.6, 3.75, Rotation2d.fromDegrees(0));
-    private final Pose2d trench1 = new Pose2d(3.375, 7.4, Rotation2d.fromDegrees(0));
+    private final Pose2d trench1 = new Pose2d(3.500, 7.4, Rotation2d.fromDegrees(0));
     private final Pose2d trench2 = new Pose2d(3.375, .7, Rotation2d.fromDegrees(0));
     private final Pose2d NZtrench1 = new Pose2d(5.9, 7.4, Rotation2d.fromDegrees(0));
     private final Pose2d NZtrench2 = new Pose2d(5.9, .7, Rotation2d.fromDegrees(0));
@@ -66,17 +66,26 @@ public class Alignment{
 
   public Command toNeutralZoneFromT1() { 
     try{
-        // Load the path you want to follow using its name in the GUI
-        PathPlannerPath path = PathPlannerPath.fromPathFile("Trench 1 To Neutral");
+            // Load the path you want to follow using its name in the GUI
+            PathPlannerPath path = PathPlannerPath.fromPathFile("Trench 1 To Neutral");
 
-        // Create a path following command using AutoBuilder. This will also trigger event markers.
-        return AutoBuilder.followPath(path);
-    } catch (Exception e) {
-        DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            // Create a path following command using AutoBuilder. This will also trigger event markers.
+            return AutoBuilder.followPath(path);
+        } catch (Exception e) {
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
+            return Commands.none();
+        }
+    }
+
+   public Command T1ShootNeutral(){
+        try {
+            PathPlannerPath path = PathPlannerPath.fromPathFile("T1ShootNeutral");
+            return AutoBuilder.followPath(path);
+        } catch (Exception e){
+            DriverStation.reportError("Big oops: " + e.getMessage(), e.getStackTrace());
         return Commands.none();
-   }
-
-}
+            }
+        }
 
   public Command toNeutralZoneFromT2() { 
     try{
