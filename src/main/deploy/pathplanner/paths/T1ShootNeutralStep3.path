@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.1486239620403325,
-        "y": 7.4
+        "x": 3.4830555555555556,
+        "y": 7.380822222222222
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.061513344990521,
-        "y": 7.398240982881623
+        "x": 3.0040400545461856,
+        "y": 6.526152253511148
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "t1shootneutralstep2"
     },
     {
       "anchor": {
-        "x": 5.9,
-        "y": 7.4
+        "x": 1.6489000000000003,
+        "y": 3.682277777777778
       },
       "prevControl": {
-        "x": 5.638965559879052,
-        "y": 7.406473583348285
+        "x": 2.334832036297061,
+        "y": 5.21165345239806
       },
       "nextControl": null,
       "isLocked": false,
@@ -38,17 +38,17 @@
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
-    "unlimited": true
+    "unlimited": false
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "T1ShootNeutral",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 90.84000000000002
   },
   "useDefaultConstraints": true
 }

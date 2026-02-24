@@ -18,12 +18,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 public class IntakeSubsystem extends SubsystemBase {
-    private final TalonFX m_intake = new TalonFX(46, "Aux");
+    private final TalonFX m_intake = new TalonFX(4, "Aux");
 
-    private final TalonFX m_intakeVL = new TalonFX(45, "Aux"); //VL stands for verticality left
-    private final TalonFX m_intakeVR = new TalonFX(47, "Aux"); //VR stands for verticality right, this is the follower motor of VL
+    private final TalonFX m_intakeVL = new TalonFX(51, "Aux"); //VL stands for verticality left
+    private final TalonFX m_intakeVR = new TalonFX(52, "Aux"); //VR stands for verticality right, this is the follower motor of VL
 
-    private final Follower m_followRequest = new Follower(45, MotorAlignmentValue.Opposed);
+    private final Follower m_followRequest = new Follower(51, MotorAlignmentValue.Opposed);
 
     private final VelocityVoltage m_velocity = new VelocityVoltage(0);
     private final MotionMagicVoltage intakeVerticalMotionMagic = new MotionMagicVoltage(0);

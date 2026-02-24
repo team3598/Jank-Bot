@@ -21,45 +21,41 @@ public class PoseSubsystem extends SubsystemBase {
     final Field2d field = new Field2d();
 
     private final CommandSwerveDrivetrain drivetrain;
-        private final List<String> limelightNames = List.of("limelight-fleft");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
+        private final List<String> limelightNames = List.of("limelight-bright");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
         private int loopCounter = 0;
 
     
-        public PoseSubsystem(CommandSwerveDrivetrain drivetrain) { //constructor
-            this.drivetrain = drivetrain;        
-            SmartDashboard.putData(field); 
-        }
+    public PoseSubsystem(CommandSwerveDrivetrain drivetrain) { //constructor
+        this.drivetrain = drivetrain;        
+        SmartDashboard.putData(field); 
+    }
     
-        private Vector<N3> calculateStdDev(double distance) {
-            double xyUncertainty = Math.max(0.1, 0.1 * Math.pow(distance, 2)); //there is Math.max because it'll spaz out if we dont give it a floor...
-            double thetaUncertainty = Math.max(0.4, 0.4 * Math.pow(distance, 2));
-            Vector<N3> calculatedStdDevs = VecBuilder.fill(xyUncertainty, xyUncertainty, thetaUncertainty); 
-    
-            return calculatedStdDevs;
-        }
-    
-        private void updateVision(String name) {
-    
-            if (!LimelightHelpers.getTV(name)) {return;} //if limelight not exist, then dont even bother running the rest
-    
-            var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
-            var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
-            
-            if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0 || 
-                mt1 == null || mt1.tagCount == 0 || mt1.avgTagDist > 4.0) 
-                 {return;}
+    private Vector<N3> calculateStdDev(double distance) {
+        double xyUncertainty = Math.max(0.1, 0.1 * Math.pow(distance, 4)); //there is Math.max because it'll spaz out if we dont give it a floor...
+        double thetaUncertainty = Math.max(0.4, 0.4 * Math.pow(distance, 4));
+        Vector<N3> calculatedStdDevs = VecBuilder.fill(xyUncertainty, xyUncertainty, thetaUncertainty); 
+        return calculatedStdDevs;
+    }
 
-            LimelightHelpers.SetRobotOrientation(name, mt1.pose.getRotation().getDegrees(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
+    private void updateVision(String name) {
+        if (!LimelightHelpers.getTV(name)) {return;} //if limelight not exist, then dont even bother running the rest
+    
+        var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
+        var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
             
-            
+        if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0 || 
+            mt1 == null || mt1.tagCount == 0 || mt1.avgTagDist > 4.0) 
+            {return;}
+
+        LimelightHelpers.SetRobotOrientation(name, mt1.pose.getRotation().getDegrees(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
     
-            Vector<N3> stdDevs = calculateStdDev(mt1.avgTagDist); //we need our std dev for rotation to be high so that the robot uses the gyro for drivetrain, but the stddev will nudge the gyro in the right direction (if it drifts)
+        Vector<N3> stdDevs = calculateStdDev(mt1.avgTagDist); //we need our std dev for rotation to be high so that the robot uses the gyro for drivetrain, but the stddev will nudge the gyro in the right direction (if it drifts)
     
-            drivetrain.addVisionMeasurement(mt2.pose, mt2.timestampSeconds, stdDevs);
-        }
+        drivetrain.addVisionMeasurement(mt2.pose, mt2.timestampSeconds, stdDevs);
+    }
     
-        public Pose2d getCurrentPose() {
-            return drivetrain.getState().Pose;
+    public Pose2d getCurrentPose() {
+        return drivetrain.getState().Pose;
     }
 
     public double getDistToTarget(Translation2d targetPosition) {
