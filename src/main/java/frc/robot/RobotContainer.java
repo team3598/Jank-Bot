@@ -74,6 +74,8 @@ public class RobotContainer {
         configureBindings();
         NamedCommands.registerCommand("IntakeOn", intake.beginIntakeCommand());
         NamedCommands.registerCommand("IntakeOff", intake.endIntakeCommand());
+        NamedCommands.registerCommand("IntakeUp", intake.intakeUp());
+        NamedCommands.registerCommand("IntakeDown", intake.intakeDown());
         NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
         NamedCommands.registerCommand("ShootAtHub", turret.getAutoAimAndShootCommand(PoseSubsystem, drivetrain, hubPosition, nearTrench));
 
@@ -100,9 +102,9 @@ public class RobotContainer {
                     currentMaxSpeed = MaxSpeed / 2.0; 
                 }
 
-             return drive.withVelocityX(-ps5Controller.getLeftY() * currentMaxSpeed)
-                    .withVelocityY(-ps5Controller.getLeftX() * currentMaxSpeed) 
-                    .withRotationalRate(-ps5Controller.getRightX() * MaxAngularRate);
+                return drive.withVelocityX(-ps5Controller.getLeftY() * currentMaxSpeed)
+                        .withVelocityY(-ps5Controller.getLeftX() * currentMaxSpeed) 
+                        .withRotationalRate(-ps5Controller.getRightX() * MaxAngularRate);
             })
         );
 
@@ -114,7 +116,7 @@ public class RobotContainer {
         turret.setDefaultCommand(
             turret.run(() -> {
                 if (isAiming) {
-                    turret.autoAim(PoseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), hubPosition);
+                    turret.autoAim(PoseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), hubPosition, drivetrain);
                     if (PoseSubsystem.getCurrentPose().getX() >= 3.5 && PoseSubsystem.getCurrentPose().getX() <= 5.75) {
                         nearTrench = true;
                     } else {
@@ -131,6 +133,11 @@ public class RobotContainer {
             Commands.runOnce(() -> {
                 isAiming = !isAiming;
             })
+        );
+
+        ps5Controller.L3().whileTrue(
+            turret.runOnce(
+                () -> turret.setHopperVelocity(-30))
         );
 
         ps5Controller.R2().whileTrue(
@@ -169,8 +176,8 @@ public class RobotContainer {
             )
         );
         
-        ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(0.05));
-        ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-7.1));
+        ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(6.14));
+        ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-0.05));
         
         ps5Controller.povLeft().whileTrue(
             turret.runEnd(

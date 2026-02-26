@@ -70,13 +70,33 @@
       "rotationDegrees": 90.0
     }
   ],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 1.660292463442062,
+      "maxWaypointRelativePos": 2.9628796400449984,
+      "constraints": {
+        "maxVelocity": 1.0,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
   "pointTowardsZones": [],
   "eventMarkers": [
     {
       "name": "IntakeOn",
-      "waypointRelativePos": 1.7674418604651148,
-      "endWaypointRelativePos": 3.0,
+      "waypointRelativePos": 1.6670416197975206,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "IntakeOff",
+      "waypointRelativePos": 2.888638920134988,
+      "endWaypointRelativePos": null,
       "command": null
     }
   ],
@@ -89,7 +109,7 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
+    "velocity": 0.0,
     "rotation": 90.84252426074038
   },
   "reversed": false,

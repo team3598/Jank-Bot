@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.0040400545461856,
-        "y": 6.526152253511148
+        "x": 2.9461739389494777,
+        "y": 7.386954289564539
       },
       "isLocked": false,
       "linkedName": "t1shootneutralstep2"
     },
     {
       "anchor": {
-        "x": 1.6489000000000003,
-        "y": 3.682277777777778
+        "x": 2.5138315539739033,
+        "y": 7.380822222222222
       },
       "prevControl": {
-        "x": 2.334832036297061,
-        "y": 5.21165345239806
+        "x": 2.815994397150332,
+        "y": 7.405760303604161
       },
       "nextControl": null,
       "isLocked": false,
@@ -47,8 +47,8 @@
   "reversed": false,
   "folder": "T1ShootNeutral",
   "idealStartingState": {
-    "velocity": 0,
-    "rotation": 90.84000000000002
+    "velocity": 0.0,
+    "rotation": -179.5076671440435
   },
   "useDefaultConstraints": true
 }

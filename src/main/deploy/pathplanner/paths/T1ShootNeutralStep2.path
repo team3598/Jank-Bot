@@ -44,7 +44,12 @@
       "linkedName": "t1shootneutralstep2"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.02,
+      "rotationDegrees": 180.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -57,8 +62,8 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
-    "rotation": 90.84000000000002
+    "velocity": 0.0,
+    "rotation": -179.5076671440435
   },
   "reversed": false,
   "folder": "T1ShootNeutral",
