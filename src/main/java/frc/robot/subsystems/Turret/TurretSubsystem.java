@@ -1,32 +1,34 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems.Turret;
 
 import frc.robot.SimpleCRT;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.PoseSubsystem;
+import frc.robot.subsystems.Turret.TurretSubsystem.TurretState;
 import frc.robot.commands.Autos.*;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXSConfigurator;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.math.filter.LinearFilter; // <--- ADDED IMPORT
+import edu.wpi.first.math.filter.LinearFilter; 
+import edu.wpi.first.wpilibj.CAN;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -36,11 +38,30 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class TurretSubsystem extends SubsystemBase {
+
+    public enum TurretState {
+        IDLE,
+        AIMING,
+        SHOOTING,
+        INTAKING_HOPPER,
+        REVERSING_HOPPER
+    }
+
+    private TurretState currentState = TurretState.IDLE;
+    private boolean aimingToggle = false;
+
+    private PoseSubsystem Pose;
+    private CommandSwerveDrivetrain Drivetrain;
+    private Translation2d targetHub = new Translation2d(4.625, 4.035);
+
     private final TalonFX turretTurner = TurretConstants.turretTurner;
     private final TalonFX turretShooter = TurretConstants.turretShooter;
     private final TalonFX turretFeeder = TurretConstants.turretFeeder;
     private final TalonFX turretHood = TurretConstants.turretHood;
     private final TalonFX turretHopper = TurretConstants.turretHopper;
+
+    private final TalonFX turretGuideL = TurretConstants.turretGuideL;
+    private final TalonFX turretGuideR = TurretConstants.turretGuideR;
     
     private final CANcoder enc10T = TurretConstants.encoder10T;
     private final CANcoder enc11T = TurretConstants.encoder11T;
@@ -50,6 +71,7 @@ public class TurretSubsystem extends SubsystemBase {
     private static final int TURRET_RING_TEETH = 100;
 
     private final VelocityVoltage velocity = new VelocityVoltage(0);
+    private final com.ctre.phoenix6.controls.VoltageOut bangBangRequest = new com.ctre.phoenix6.controls.VoltageOut(0);
     private final MotionMagicVoltage turnerMMRequest = new MotionMagicVoltage(0); 
     private final MotionMagicVoltage hoodMMRequest = new MotionMagicVoltage(0); 
     public InterpolatingDoubleTreeMap m_shooterSpeedMap = new InterpolatingDoubleTreeMap();
@@ -57,16 +79,14 @@ public class TurretSubsystem extends SubsystemBase {
     
     private final double shooterWheelRadius = Units.inchesToMeters(2.0); 
     
-    private final double fuelEfficiency = 0.35; 
-    private final double maxShift = 2; 
+    private final double fuelEfficiency = 0.3; 
+    private final double maxShift = 2;
     private final double rotationLookAhead = 0.1;
     private double currentAimTargetRotations = 0;
 
     private double jamStartTime = -1.0;
     private double unjamEndTime = -1.0;
 
-    // --- NEW FILTERS FOR ACCELERATION ---
-    // 0.1s time constant to ignore carpet bumps
     private final LinearFilter accelFilterX = LinearFilter.singlePoleIIR(0.1, 0.02); 
     private final LinearFilter accelFilterY = LinearFilter.singlePoleIIR(0.1, 0.02);
 
@@ -83,12 +103,51 @@ public class TurretSubsystem extends SubsystemBase {
         turretHood.setPosition(0.0);
     }
 
+    public void setDependencies(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain) {
+        this.Pose = pose;
+        this.Drivetrain = drivetrain;
+    }
+
+    public void setState(TurretState newState) {
+        this.currentState = newState;
+    }
+
+    public TurretState getState() {
+        return currentState;
+    }
+
+    public void toggleAiming() {
+        aimingToggle = !aimingToggle;
+        if (currentState != TurretState.SHOOTING) {
+            setState(aimingToggle ? TurretState.AIMING : TurretState.IDLE);
+        }
+    }
+
+    public boolean getAimingToggle() {
+        return aimingToggle;
+    }
+    
+    public Command getAutoAimAndShootCommand(Translation2d targetHub) {
+        return Commands.startEnd(
+            () -> {
+                this.targetHub = targetHub;
+                setState(TurretState.SHOOTING);
+            },
+            () -> {
+                setState(aimingToggle ? TurretState.AIMING : TurretState.IDLE);
+            },
+            this
+        );
+    }
+
     public void configureMotors() {
         final TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
         flywheelConfig.Feedback.SensorToMechanismRatio = 1.6;
         flywheelConfig.Slot0.kP = 0.1;
-        flywheelConfig.Slot0.kV = 0.28;
+        flywheelConfig.Slot0.kV = 0.3;
         flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        flywheelConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        flywheelConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
 
         final TalonFXConfiguration feederConfig = new TalonFXConfiguration();
         feederConfig.Slot0.kP = 0;
@@ -99,12 +158,12 @@ public class TurretSubsystem extends SubsystemBase {
         hopperConfig.Slot0.kP = 0;
         hopperConfig.Slot0.kV = 0.1;
         hopperConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        hopperConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-        hopperConfig.CurrentLimits.StatorCurrentLimit = 60.0;
+        hopperConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        hopperConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
-        turnerConfig.Feedback.SensorToMechanismRatio = 41.66666; 
-        turnerConfig.MotionMagic.MotionMagicCruiseVelocity = 8.0; 
+        turnerConfig.Feedback.SensorToMechanismRatio = 125.0/3.0; 
+        turnerConfig.MotionMagic.MotionMagicCruiseVelocity = 6.0;
         turnerConfig.MotionMagic.MotionMagicAcceleration = 20.0;  
         turnerConfig.MotionMagic.MotionMagicJerk = 100.0;
         turnerConfig.Slot0.kP = 80; 
@@ -112,26 +171,50 @@ public class TurretSubsystem extends SubsystemBase {
         turnerConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         turnerConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 0; 
         turnerConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        turnerConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -1.1;
+        turnerConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -1.0;
         turnerConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         turnerConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        turnerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        turnerConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
         
         final TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
-        hoodConfig.MotionMagic.MotionMagicCruiseVelocity = 4.0; 
-        hoodConfig.MotionMagic.MotionMagicAcceleration = 8.0;  
-        hoodConfig.MotionMagic.MotionMagicJerk = 10.0;        
-        hoodConfig.Slot0.kP = 40;
-        hoodConfig.Slot0.kV = 0.3;
+        hoodConfig.MotionMagic.MotionMagicCruiseVelocity = 12.0; 
+        hoodConfig.MotionMagic.MotionMagicAcceleration = 24.0;
+        hoodConfig.Slot0.kV = 0.1175;
         hoodConfig.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         hoodConfig.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 13;
         hoodConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         hoodConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -0.5; 
+
+        final TalonFXConfiguration guideLConfig = new TalonFXConfiguration();
+        guideLConfig.Feedback.SensorToMechanismRatio = 3.0;
+        guideLConfig.Slot0.kP = 0;
+        guideLConfig.Slot0.kV = 0.1;
+
+        final TalonFXConfiguration guideRConfig = new TalonFXConfiguration();
+        guideRConfig.Feedback.SensorToMechanismRatio = 3.0;
+        guideRConfig.Slot0.kP = 0;
+        guideRConfig.Slot0.kV = 0.1;
+
+        final CANcoderConfiguration enc10TConfiguration = new CANcoderConfiguration();
+        enc10TConfiguration.MagnetSensor.MagnetOffset = 0.41;
+        enc10TConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1.0;
+        enc10TConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+
+        final CANcoderConfiguration enc11TConfiguration = new CANcoderConfiguration();
+        enc11TConfiguration.MagnetSensor.MagnetOffset = 0.69;
+        enc11TConfiguration.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1.0;
+        enc11TConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
 
         turretTurner.getConfigurator().apply(turnerConfig);
         turretShooter.getConfigurator().apply(flywheelConfig);
         turretFeeder.getConfigurator().apply(feederConfig);
         turretHood.getConfigurator().apply(hoodConfig);
         turretHopper.getConfigurator().apply(hopperConfig);
+        turretGuideL.getConfigurator().apply(guideLConfig);
+        turretGuideR.getConfigurator().apply(guideRConfig);
+        enc10T.getConfigurator().apply(enc10TConfiguration);
+        enc11T.getConfigurator().apply(enc11TConfiguration);
     }
 
     private void seedTurretPosition() {
@@ -153,75 +236,71 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public void seedDistMaps() {
-        m_shooterSpeedMap.put(2.0, 13.25);
+        m_shooterSpeedMap.put(1.75, 11.75);
+        m_hoodAngleMap.put(1.75, 0.0);
+        m_shooterSpeedMap.put(2.0, 12.0);
         m_hoodAngleMap.put(2.0, 0.0);
-        m_shooterSpeedMap.put(2.5, 13.75);
+        m_shooterSpeedMap.put(2.5, 12.0);
         m_hoodAngleMap.put(2.5, 0.0);
-        m_shooterSpeedMap.put(3.0, 14.25);
-        m_hoodAngleMap.put(3.0, 0.0);
-        m_shooterSpeedMap.put(3.5, 15.25);
-        m_hoodAngleMap.put(3.5, 0.0);
-        m_shooterSpeedMap.put(4.0, 16.25);
-        m_hoodAngleMap.put(4.0, 0.0);
-        m_shooterSpeedMap.put(4.5, 17.25);
-        m_hoodAngleMap.put(4.5, 0.5);
-        m_shooterSpeedMap.put(5.0, 18.5);
-        m_hoodAngleMap.put(5.0, 0.0);
+        m_shooterSpeedMap.put(3.0, 12.0);
+        m_hoodAngleMap.put(3.0, 4.0);
+        m_shooterSpeedMap.put(3.5, 13.0);
+        m_hoodAngleMap.put(3.5, 8.0);
+        m_shooterSpeedMap.put(4.0, 13.5);
+        m_hoodAngleMap.put(4.0, 8.5);
+        m_shooterSpeedMap.put(4.5, 14.0);
+        m_hoodAngleMap.put(4.5, 9.0);
+        m_shooterSpeedMap.put(5.0, 14.25);
+        m_hoodAngleMap.put(5.0, 10.0);
+        m_shooterSpeedMap.put(5.5, 15.0);
+        m_hoodAngleMap.put(5.5, 11.0);
     }
 
-
-    public double autoAim(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, Translation2d targetPosition, CommandSwerveDrivetrain drivetrain) {
+    public double autoAim(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, Translation2d targetPosition) {
         
-        // multiply G's by 9.81 to get m/s^2
-        double rawAx = drivetrain.getPigeon2().getAccelerationX().getValueAsDouble() * 9.81;
-        double rawAy = drivetrain.getPigeon2().getAccelerationY().getValueAsDouble() * 9.81;
-
-        // filter accel
-        double ax = accelFilterX.calculate(rawAx);
-        double ay = accelFilterY.calculate(rawAy);
-
-        // recursion
         double distance = robotPose.getTranslation().getDistance(targetPosition);
         double t = calculateTimeOfFlight(distance);
-        Translation2d virtualHub = targetPosition;
-        
-        // for air resistance
         double dragFactor = 0.85; 
+        
+        double targetX = targetPosition.getX();
+        double targetY = targetPosition.getY();
+        double virtX = targetX;
+        double virtY = targetY;
 
-        // recursion, 5 step loop
         for (int i = 0; i < 5; i++) {
-            // Drag Compensation
             double effectiveVx = fieldRelativeSpeeds.vxMetersPerSecond * dragFactor;
             double effectiveVy = fieldRelativeSpeeds.vyMetersPerSecond * dragFactor;
 
-            double shiftX = -(effectiveVx * t + 0.5 * ax * (t * t));
-            double shiftY = -(effectiveVy * t + 0.5 * ay * (t * t));
+            double shiftX = -(effectiveVx * t);
+            double shiftY = -(effectiveVy * t);
             
-            // safety clamp
             shiftX = Math.max(-maxShift, Math.min(maxShift, shiftX));
             shiftY = Math.max(-maxShift, Math.min(maxShift, shiftY));
 
-            virtualHub = new Translation2d(targetPosition.getX() + shiftX, targetPosition.getY() + shiftY);
+            virtX = targetX + shiftX;
+            virtY = targetY + shiftY;
             
-            distance = robotPose.getTranslation().getDistance(virtualHub);
+            double dx = virtX - robotPose.getX();
+            double dy = virtY - robotPose.getY();
+            distance = Math.hypot(dx, dy);
+            
             t = calculateTimeOfFlight(distance);
-            if (t > 1.0) t = 1.0; 
+            if (t > 2.0) t = 2.0; 
         }
 
-        Translation2d robotToTarget = virtualHub.minus(robotPose.getTranslation());
-        Rotation2d targetRot = new Rotation2d(robotToTarget.getX(), robotToTarget.getY());
+        Rotation2d targetRot = new Rotation2d(virtX - robotPose.getX(), virtY - robotPose.getY());
         Rotation2d relativeRot = targetRot.minus(robotPose.getRotation());
         double aimAngle = Math.IEEEremainder(relativeRot.getDegrees(), 360.0);
 
         double robotSpinRPS = fieldRelativeSpeeds.omegaRadiansPerSecond / (2 * Math.PI);
         double finalTarget = aimAngle + (-robotSpinRPS * rotationLookAhead * 360.0);
 
-        finalTarget = MathUtil.inputModulus(finalTarget, -180, 180);
+        finalTarget = MathUtil.inputModulus(finalTarget, -360, 0);
 
-        if (finalTarget > 90) finalTarget = 90;
-        if (finalTarget < -90) finalTarget = -90;
+        if (finalTarget > 0) finalTarget = 0;
+        if (finalTarget < -360) finalTarget = -360;
 
-        moveTurretAngle(((finalTarget / 360.0)));
+        moveTurretAngle(finalTarget / 360.0);
         
         return distance;
     }
@@ -236,11 +315,15 @@ public class TurretSubsystem extends SubsystemBase {
         double horizontalVelocity = exitVelocity * Math.cos(Math.toRadians(targetHoodDeg));
 
         if (horizontalVelocity < 1.0) return 1.0; 
-        return (distance / horizontalVelocity) + 0.05;
-    }   
+        return (distance / horizontalVelocity) + 0.1;
+    }
 
     public boolean isShooterAtSpeed(double targetRPS) {
         return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 1.5;
+    }
+
+    public boolean isHoodAtAngle(double targetAngle) {
+        return Math.abs(turretHood.getPosition().getValueAsDouble() - targetAngle) < 0.5;
     }
 
     public boolean isTurretAligned(double toleranceDegrees){
@@ -287,27 +370,38 @@ public class TurretSubsystem extends SubsystemBase {
         jamStartTime = -1.0;
         setFeederVelocity(0);
         setHopperVelocity(0);
+        setGuideVelocities(0);
     }
 
-    public Command getAutoAimAndShootCommand(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench) {
+    public void pulseHopper(double fastRPS, double slowRPS) {
+        if (Timer.getFPGATimestamp() % 0.5 < 0.25) {
+            setHopperVelocity(fastRPS);
+        } else {
+            setHopperVelocity(slowRPS);
+        }
+    }
+
+    /*public Command getAutoAimAndShootCommand(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench, double guideRPS) {
         return this.runEnd(
             () -> {
-                double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub, drivetrain);
+                double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub);
             
                 double targetSpeed = m_shooterSpeedMap.get(virtualDist);
+                double targetAngle = m_hoodAngleMap.get(virtualDist);
                 setShooterVelocity(targetSpeed);
 
                 if (!nearTrench){
-                    setHoodPosition(m_hoodAngleMap.get(virtualDist));
+                    setHoodPosition(targetAngle);
                 } else {
                     setHoodPosition(0);
                 }
-
-                if (isShooterAtSpeed(targetSpeed) && isTurretAligned(3.5)) {
+                
+                if (isShooterAtSpeed(targetSpeed)) {// && isTurretAligned(8)) { 
                     setFeederVelocity(90);
-                    setHopperVelocity(50);
+                    setHopperVelocity(225);
+                    setGuideVelocities(70);
                 } else {
-                    stopFeeding(); 
+                    stopFeeding();    
                 }
             },
             () -> {
@@ -321,21 +415,21 @@ public class TurretSubsystem extends SubsystemBase {
     public Command getAutoAimAndShootCommandCalibration(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench, DoubleSupplier hoodPosition, DoubleSupplier flywheelPower) {
         return this.runEnd(
             () -> {
-                double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub, drivetrain);
+                double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub);
             
                 double targetSpeed = m_shooterSpeedMap.get(virtualDist);
                 setShooterVelocity(flywheelPower.getAsDouble());
 
                 if (!nearTrench){
-                    //setHoodPosition(hoodPosition.getAsDouble());
-                    setHoodPosition(0);
+                    setHoodPosition(hoodPosition.getAsDouble());
                 } else {
                     setHoodPosition(0);
                 }
 
-                if (isShooterAtSpeed(flywheelPower.getAsDouble()) && isTurretAligned(1.5)) {
+                if (isShooterAtSpeed(flywheelPower.getAsDouble()) && isTurretAligned(4)) {
                     setFeederVelocity(90);
                     setHopperVelocity(50);
+                    setGuideVelocities(50);
                 } else {
                     stopFeeding(); 
                 }
@@ -346,7 +440,7 @@ public class TurretSubsystem extends SubsystemBase {
                 setHoodPosition(-0.3);
             }
         );
-    }
+    }*/
 
     public void moveTurretAngle(double turretRotations) {
         this.currentAimTargetRotations = turretRotations;
@@ -356,13 +450,15 @@ public class TurretSubsystem extends SubsystemBase {
     public void stopMotors(){
         turretTurner.stopMotor();
         turretHood.stopMotor();
-        turretShooter.stopMotor();
+        //turretShooter.stopMotor();
         turretFeeder.stopMotor();
         turretHopper.stopMotor();
+        turretGuideL.stopMotor();
+        turretGuideR.stopMotor();
     }
 
-    public void setShooterVelocity(double rps) {
-        turretShooter.setControl(velocity.withVelocity(rps));
+    public void setShooterVelocity(double targetRPS) {
+        turretShooter.setControl(velocity.withVelocity(targetRPS));
     }
 
     public void setFeederVelocity(double rps) {
@@ -377,6 +473,11 @@ public class TurretSubsystem extends SubsystemBase {
         turretHopper.setControl(velocity.withVelocity(rps));
     }
 
+    public void setGuideVelocities(double rps) {
+        turretGuideL.setControl(velocity.withVelocity(-rps));
+        turretGuideR.setControl(velocity.withVelocity(rps));
+    }
+
     public double getFeederSpeed(){
         return turretFeeder.getVelocity().getValueAsDouble();
     }
@@ -388,6 +489,11 @@ public class TurretSubsystem extends SubsystemBase {
     public double getHopperSpeed()
     {
         return turretHopper.getVelocity().getValueAsDouble();
+    }
+
+    public double getGuideLSpeed()
+    {
+        return turretGuideL.getVelocity().getValueAsDouble();
     }
 
     public Command goToHoodAngle(double degrees) {
@@ -427,8 +533,68 @@ public class TurretSubsystem extends SubsystemBase {
         );
     } 
 
-    @Override
     public void periodic() {
-        //System.out.println(turretHood.getPosition().getValueAsDouble());
+        if (Pose == null || Drivetrain == null) return;
+
+        Pose2d robotPose = Pose.getCurrentPose();
+        ChassisSpeeds speeds = Drivetrain.getFieldRelativeSpeed();
+        boolean nearTrench = robotPose.getX() >= 3.5 && robotPose.getX() <= 5.75;
+
+        // FSM DIRECTOR
+        switch (currentState) {
+            
+            case IDLE:
+                stopMotors();
+                setHoodPosition(-0.3);
+                break;
+
+            case AIMING:
+                double aimDist = autoAim(robotPose, speeds, targetHub);
+                setShooterVelocity(5.0); 
+                setHoodPosition(nearTrench ? 0 : m_hoodAngleMap.get(aimDist));
+                turretFeeder.stopMotor();
+                turretHopper.stopMotor();
+                turretGuideL.stopMotor();
+                turretGuideR.stopMotor();
+                break;
+
+            case SHOOTING:
+                double shootDist = autoAim(robotPose, speeds, targetHub);
+                double targetSpeed = m_shooterSpeedMap.get(shootDist);
+                double targetAngle = m_hoodAngleMap.get(shootDist);
+                
+                setShooterVelocity(targetSpeed);
+                setHoodPosition(nearTrench ? 0 : targetAngle);
+
+                if (isShooterAtSpeed(targetSpeed)) { 
+                    setFeederVelocity(90);
+                    setHopperVelocity(225);
+                    setGuideVelocities(70);
+                } else {
+                    turretFeeder.stopMotor();
+                    turretHopper.stopMotor();
+                    turretGuideL.stopMotor();
+                    turretGuideR.stopMotor();
+                }
+                break;
+
+            case INTAKING_HOPPER:
+                turretTurner.stopMotor();
+                turretShooter.stopMotor();
+                setHoodPosition(-0.3);
+                setFeederVelocity(0);
+                setHopperVelocity(225.0);
+                setGuideVelocities(0);
+                break;
+
+            case REVERSING_HOPPER:
+                turretTurner.stopMotor();
+                turretShooter.stopMotor();
+                setHoodPosition(-0.3);
+                setFeederVelocity(0);
+                setHopperVelocity(-225.0);
+                setGuideVelocities(0);
+                break;
+        }
     }
 }

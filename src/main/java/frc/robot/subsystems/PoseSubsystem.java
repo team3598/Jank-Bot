@@ -17,13 +17,13 @@ import frc.robot.LimelightHelpers;
 
 
 public class PoseSubsystem extends SubsystemBase {
+
     public static double timeMS = Timer.getFPGATimestamp();
     final Field2d field = new Field2d();
-
+    private final List<String> limelightNames = List.of("limelight-fleft", "limelight-fright");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
+    private int loopCounter = 0;
+    private final Vector<N3> defaultStdDevs = VecBuilder.fill(0.1, 0.1, 0.4);
     private final CommandSwerveDrivetrain drivetrain;
-        private final List<String> limelightNames = List.of("limelight-fleft", "limelight-fright");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
-        private int loopCounter = 0;
-
     
     public PoseSubsystem(CommandSwerveDrivetrain drivetrain) { //constructor
         this.drivetrain = drivetrain;        
@@ -31,25 +31,33 @@ public class PoseSubsystem extends SubsystemBase {
     }
     
     private Vector<N3> calculateStdDev(double distance) {
-        double xyUncertainty = Math.max(0.1, 0.1 * Math.pow(distance, 4)); //there is Math.max because it'll spaz out if we dont give it a floor...
-        double thetaUncertainty = Math.max(0.4, 0.4 * Math.pow(distance, 4));
-        Vector<N3> calculatedStdDevs = VecBuilder.fill(xyUncertainty, xyUncertainty, thetaUncertainty); 
-        return calculatedStdDevs;
+        if (distance < 1.0) return defaultStdDevs; 
+
+        double xyUncertainty = 0.1 * Math.pow(distance, 4);
+        double thetaUncertainty = 0.4 * Math.pow(distance, 4);
+        
+        
+        if (xyUncertainty < 0.1) xyUncertainty = 0.1;
+        if (thetaUncertainty < 999999999.0) thetaUncertainty = 9999999999999.0;
+
+        return VecBuilder.fill(xyUncertainty, xyUncertainty, thetaUncertainty); 
     }
 
     private void updateVision(String name) {
         if (!LimelightHelpers.getTV(name)) {return;} //if limelight not exist, then dont even bother running the rest
     
-        var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
+        //var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
         var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
             
-        if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0 || 
-            mt1 == null || mt1.tagCount == 0 || mt1.avgTagDist > 4.0) 
+        if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0) //|| 
+            //mt1 == null || mt1.tagCount == 0 || mt1.avgTagDist > 4.0) 
             {return;}
-
-        LimelightHelpers.SetRobotOrientation(name, mt1.pose.getRotation().getDegrees(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
     
-        Vector<N3> stdDevs = calculateStdDev(mt1.avgTagDist); //we need our std dev for rotation to be high so that the robot uses the gyro for drivetrain, but the stddev will nudge the gyro in the right direction (if it drifts)
+        LimelightHelpers.SetRobotOrientation(name, drivetrain.getPigeon2().getYaw().getValueAsDouble(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
+    
+        Vector<N3> stdDevs = calculateStdDev(mt2.avgTagDist);
+
+        //Vector<N3> stdDevs = calculateStdDev(mt1.avgTagDist); //we need our std dev for rotation to be high so that the robot uses the gyro for drivetrain, but the stddev will nudge the gyro in the right direction (if it drifts)
     
         drivetrain.addVisionMeasurement(mt2.pose, mt2.timestampSeconds, stdDevs);
     }
@@ -73,6 +81,8 @@ public class PoseSubsystem extends SubsystemBase {
         loopCounter++;
         updateVision(activeCamera);
         //printCurrentPose();
-        field.setRobotPose(drivetrain.getState().Pose);
+        if (loopCounter % 2 == 0) {
+            field.setRobotPose(drivetrain.getState().Pose);
+        }
     }
 }

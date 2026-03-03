@@ -14,7 +14,10 @@ public class TurretConstants {
     public static final TalonFX turretFeeder = new TalonFX(48, "Aux");
     public static final TalonFX turretHood = new TalonFX(44, "Aux");
     public static final TalonFX turretHopper = new TalonFX(49, "Aux");
-    
+
+    public static final TalonFX turretGuideL = new TalonFX(5, "Aux");
+    public static final TalonFX turretGuideR = new TalonFX(6, "Aux");
+
     public static final CANcoder encoder11T = new CANcoder(1, "Aux"); 
     public static final CANcoder encoder10T = new CANcoder(2, "Aux"); 
 }

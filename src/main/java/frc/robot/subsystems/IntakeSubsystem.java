@@ -22,6 +22,7 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class IntakeSubsystem extends SubsystemBase {
@@ -42,6 +43,8 @@ public class IntakeSubsystem extends SubsystemBase {
         talonFXconfigs.Slot0.kP = 0.12;
         talonFXconfigs.Slot0.kV = 0.14;
         talonFXconfigs.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        talonFXconfigs.CurrentLimits.SupplyCurrentLimit = 40;
+        talonFXconfigs.CurrentLimits.SupplyCurrentLimitEnable = true;
         m_intake1.getConfigurator().apply(talonFXconfigs);
 
         SparkFlexConfig vortexConfig = new SparkFlexConfig();
@@ -104,7 +107,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public Command intakeUp() {
-        return this.runOnce(() -> setIntakeVerticalityPosition(6));
+        return this.runOnce(() -> this.setIntakeVerticalityPosition(6));
     }
     
     public Command intakeDown() {
@@ -112,9 +115,27 @@ public class IntakeSubsystem extends SubsystemBase {
            );
     }
 
-    public Command runIntakeCommand(double rps) {
+    public Command intakeAgitate(){
         return this.runEnd(
-            () -> this.setIntakeVelocity(30), 
+            () -> {
+                if (Timer.getFPGATimestamp() % 1.0 < 0.3) {
+                    this.setIntakeVerticalityPosition(3);
+                    this.setIntakeVelocity(40);
+                } else {
+                    this.setIntakeVerticalityPosition(0.5);
+                    this.setIntakeVelocity(0);
+                }
+            },
+            
+            () -> {
+                this.setIntakeVelocity(0);
+                this.setIntakeVerticalityPosition(-0.05);
+            });
+    }
+
+    public Command runIntakeCommand() {
+        return this.runEnd(
+            () -> this.setIntakeVelocity(50), 
             () -> {
                 this.m_intake1.stopMotor();
                 this.m_intake2.stopMotor(); 
@@ -123,7 +144,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public Command beginIntakeCommand() {
-        return this.runOnce(() -> this.setIntakeVelocity(30));
+        return this.run(() -> this.setIntakeVelocity(50));
     }
 
     public Command endIntakeCommand() {
@@ -136,6 +157,8 @@ public class IntakeSubsystem extends SubsystemBase {
     public double getIntakeVelocity() {
         return m_intake1.getVelocity().getValueAsDouble();
     } 
+
+    
 
     @Override
     public void periodic() {

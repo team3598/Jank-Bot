@@ -36,9 +36,28 @@
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "T1ShootNeutralStep1"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "T1ShootNeutralStep1"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "IntakeOn"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOff"
           }
         },
         {
