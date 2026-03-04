@@ -46,18 +46,14 @@ public class PoseSubsystem extends SubsystemBase {
     private void updateVision(String name) {
         if (!LimelightHelpers.getTV(name)) {return;} //if limelight not exist, then dont even bother running the rest
     
-        //var mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue(name);
         var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
             
         if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0) //|| 
-            //mt1 == null || mt1.tagCount == 0 || mt1.avgTagDist > 4.0) 
             {return;}
     
         LimelightHelpers.SetRobotOrientation(name, drivetrain.getPigeon2().getYaw().getValueAsDouble(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
     
         Vector<N3> stdDevs = calculateStdDev(mt2.avgTagDist);
-
-        //Vector<N3> stdDevs = calculateStdDev(mt1.avgTagDist); //we need our std dev for rotation to be high so that the robot uses the gyro for drivetrain, but the stddev will nudge the gyro in the right direction (if it drifts)
     
         drivetrain.addVisionMeasurement(mt2.pose, mt2.timestampSeconds, stdDevs);
     }

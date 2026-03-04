@@ -21,6 +21,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.PoseSubsystem;
+import frc.robot.subsystems.IntakeSubsystem.IntakeStates;
 import frc.robot.subsystems.Turret.TurretSubsystem;
 import frc.robot.subsystems.Turret.TurretSubsystem.TurretState; // Import the FSM!
 import frc.robot.commands.Autos.Alignment;
@@ -54,15 +55,19 @@ public class RobotContainer {
 
         configureBindings();
         
-        // Auto Commands using the new FSM method
         NamedCommands.registerCommand("ShootAtHub", turret.getAutoAimAndShootCommand(hubPosition));
         NamedCommands.registerCommand("StopShooting", Commands.runOnce(() -> turret.setState(TurretState.IDLE)));
         
-        NamedCommands.registerCommand("IntakeOn", intake.beginIntakeCommand());
-        NamedCommands.registerCommand("IntakeOff", intake.endIntakeCommand());
-        NamedCommands.registerCommand("RunIntakeCommand", intake.runIntakeCommand());
-        NamedCommands.registerCommand("IntakeUp", intake.intakeUp());
-        NamedCommands.registerCommand("IntakeDown", intake.intakeDown());
+        NamedCommands.registerCommand("IntakeOn", Commands.runOnce(() -> intake.setState(IntakeStates.DOWN_INTAKING)));
+        NamedCommands.registerCommand("IntakeOff", Commands.runOnce(() -> intake.setState(IntakeStates.IDLE)));
+        NamedCommands.registerCommand("IntakeUp", Commands.runOnce(() -> intake.setState(IntakeStates.FOLDED)));
+        NamedCommands.registerCommand("IntakeDown", Commands.runOnce(() -> intake.setState(IntakeStates.DOWN)));
+        
+        NamedCommands.registerCommand("RunIntakeCommand", Commands.startEnd(
+            () -> intake.setState(IntakeStates.DOWN_INTAKING),
+            () -> intake.setState(IntakeStates.IDLE)
+        ));
+
         NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
 
         autoChooser = AutoBuilder.buildAutoChooser("T1ShootNeutral");
@@ -73,7 +78,6 @@ public class RobotContainer {
     }
     
     private void configureBindings() {
-        // Drivetrain uses Turret State instead of isShooting boolean
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() -> {
                 double currentMaxSpeed = (turret.getState() == TurretState.SHOOTING) ? (MaxSpeed / 1.5) : MaxSpeed;
@@ -93,52 +97,61 @@ public class RobotContainer {
         );
 
         ps5Controller.R2().whileTrue(
-            Commands.startEnd(
+            Commands.runEnd(
                 () -> {
                     turret.setState(TurretState.SHOOTING);
-                    intake.setIntakeVelocity(60);
+                    intake.setState(IntakeStates.DOWN_INTAKING);
                     HIDController.setRumble(RumbleType.kBothRumble, 1);
                     HIDController.setOutput(1, true);
                 },
                 () -> {
                     turret.setState(turret.getAimingToggle() ? TurretState.AIMING : TurretState.IDLE);
-                    intake.setIntakeVelocity(0.0);
+                    intake.setState(IntakeStates.IDLE);
                     HIDController.setRumble(RumbleType.kBothRumble, 0);
                     HIDController.setOutput(0, false);
-                },
-                intake, turret
+                }
             )
         );
 
         ps5Controller.L2().toggleOnTrue(
-            Commands.startEnd(
+            Commands.runEnd(
                 () -> {
                     turret.setState(TurretState.INTAKING_HOPPER);
-                    intake.setIntakeVelocity(60.0);
+                    intake.setState(IntakeStates.DOWN_INTAKING);
                 },
                 () -> {
                     turret.setState(turret.getAimingToggle() ? TurretState.AIMING : TurretState.IDLE);
-                    intake.setIntakeVelocity(0.0);
-                },
-                intake, turret
+                    intake.setState(IntakeStates.IDLE);
+                }
             )
         );
 
         ps5Controller.R3().toggleOnTrue(
-            Commands.startEnd(
+            Commands.runEnd(
                 () -> {
                     turret.setState(TurretState.REVERSING_HOPPER);
-                    intake.setIntakeVelocity(-60);
+                    intake.setState(IntakeStates.OUTTAKING);
                 },
                 () -> {
                     turret.setState(turret.getAimingToggle() ? TurretState.AIMING : TurretState.IDLE);
-                    intake.setIntakeVelocity(0);
-                },
-                intake, turret
+                    intake.setState(IntakeStates.IDLE);
+                }
             )
         );
 
-        // D-PAD
+        ps5Controller.L3().whileTrue(
+            Commands.startEnd(
+                () -> intake.setState(IntakeStates.AGITATING),
+                () -> {
+                    if (turret.getState() == TurretState.SHOOTING) {
+                        intake.setState(IntakeStates.DOWN_INTAKING);
+                    } else {
+                        intake.setState(IntakeStates.IDLE);
+                    }
+                }
+            )
+        );
+
         ps5Controller.povUp().onTrue(intake.setIntakeVerticalPosition(6.14));
         ps5Controller.povDown().onTrue(intake.setIntakeVerticalPosition(-0.05));
     }

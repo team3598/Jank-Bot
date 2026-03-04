@@ -22,10 +22,28 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
+
 
 public class IntakeSubsystem extends SubsystemBase {
+
+    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+
+    public enum IntakeStates {
+        IDLE,
+        FOLDED,
+        DOWN,
+        AGITATING,
+        DOWN_INTAKING,
+        OUTTAKING
+    }
+
+    private IntakeStates currentState = IntakeStates.IDLE;
+
     private final TalonFX m_intake1 = new TalonFX(46, "Aux");
     private final SparkFlex m_intake2 = new SparkFlex(44, MotorType.kBrushless);
     private final SparkClosedLoopController m_intake2PID = m_intake2.getClosedLoopController();
@@ -81,6 +99,14 @@ public class IntakeSubsystem extends SubsystemBase {
         m_intakeVR.setPosition(0);
     }
 
+    public void setState(IntakeStates state){
+        this.currentState = state;
+    }
+
+    public IntakeStates getState(){
+        return this.currentState;
+    }
+
     public void setIntakeVelocity(double rps) {
         m_intake1.setControl(m_velocity.withVelocity(rps));
         // REV expects RPM
@@ -95,6 +121,26 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     
     public void setIntakeVerticalityPosition(double position) {
+        m_intakeVL.setControl(intakeVerticalMotionMagic.withPosition(position));
+        m_intakeVR.setControl(m_VFollowRequest);
+    }
+
+    public double calculatedIntakeSpeeds(ChassisSpeeds fieldRelativeSpeeds) {
+        double robotVelocity = Math.hypot(fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond);
+        double robotVelocityInFeet = robotVelocity * 3.281;
+        double targetIntakeVelocity = robotVelocityInFeet * 2;
+        double intakeSpinSpeed = Math.max(30, targetIntakeVelocity * 2 * Math.PI);
+
+        return intakeSpinSpeed;
+    }
+
+    private void applyIntakeVelocity(double rps) {
+        m_intake1.setControl(m_velocity.withVelocity(rps));
+        m_intake2PID.setReference(rps * 30.0, ControlType.kVelocity);
+        m_intakeVR.setControl(m_VFollowRequest);
+    }
+    
+    private void applyVerticalPosition(double position) {
         m_intakeVL.setControl(intakeVerticalMotionMagic.withPosition(position));
         m_intakeVR.setControl(m_VFollowRequest);
     }
@@ -134,7 +180,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public Command runIntakeCommand() {
-        return this.runEnd(
+        return this.startEnd(
             () -> this.setIntakeVelocity(50), 
             () -> {
                 this.m_intake1.stopMotor();
@@ -158,10 +204,47 @@ public class IntakeSubsystem extends SubsystemBase {
         return m_intake1.getVelocity().getValueAsDouble();
     } 
 
-    
-
     @Override
     public void periodic() {
+
+        ChassisSpeeds speeds = drivetrain.getFieldRelativeSpeed();
+
+        switch (currentState) {
+            case FOLDED:
+                applyIntakeVelocity(0);
+                applyVerticalPosition(6.14);
+                break;
+            
+            case IDLE:
+                applyIntakeVelocity(0);
+                break;
+
+            case DOWN:
+                applyVerticalPosition(-0.05);
+                break;
+
+            case DOWN_INTAKING:
+                applyVerticalPosition(-0.05); 
+                applyIntakeVelocity(calculatedIntakeSpeeds(speeds));  
+                System.out.println(calculatedIntakeSpeeds(speeds));  
+                break;
+            
+            case OUTTAKING:
+                applyVerticalPosition(-0.05);
+                applyIntakeVelocity(-50);
+                break;
+
+            case AGITATING: 
+                if (Timer.getFPGATimestamp() % 1.0 < 0.3) {
+                    applyVerticalPosition(3.0);
+                    applyIntakeVelocity(40.0);
+                } else {
+                    applyVerticalPosition(0.5);
+                    applyIntakeVelocity(0.0);
+                }
+                break;
+        }
+
         m_intakeVR.setControl(m_VFollowRequest);
         SmartDashboard.putNumber("IntakeVelocity", getIntakeVelocity());
         //System.out.println(m_intakeVL.getPosition().getValueAsDouble());

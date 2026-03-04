@@ -319,7 +319,7 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public boolean isShooterAtSpeed(double targetRPS) {
-        return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 1.5;
+        return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 4.5;
     }
 
     public boolean isHoodAtAngle(double targetAngle) {
@@ -330,47 +330,6 @@ public class TurretSubsystem extends SubsystemBase {
         double currentAimedPosition = turretTurner.getPosition().getValueAsDouble();
         double error = Math.abs(currentAimedPosition - currentAimTargetRotations) * 360;
         return error < toleranceDegrees;
-    }
-
-    public boolean runFeederWithUnjam() {
-        double currentTime = PoseSubsystem.timeMS;
-
-        if (unjamEndTime > 0 && currentTime < unjamEndTime) {
-            setHopperVelocity(-40);
-            setFeederVelocity(-20);
-            jamStartTime = -1.0; 
-            return true; 
-        }
-
-        unjamEndTime = -1.0; 
-
-        double currentAmps = turretHopper.getStatorCurrent().getValueAsDouble();
-    
-        if (currentAmps >= 50.0) {
-            if (jamStartTime < 0) {
-                jamStartTime = currentTime; 
-            }
-            if (currentTime - jamStartTime > 100.0) {
-                unjamEndTime = currentTime + 500.0; 
-                jamStartTime = -1.0; 
-            } else {
-                setFeederVelocity(90);
-                setHopperVelocity(25);
-            }
-        } else {
-            jamStartTime = -1.0; 
-            setFeederVelocity(90);
-            setHopperVelocity(25);
-        }
-        return false;
-    }
-
-    public void stopFeeding() {
-        unjamEndTime = -1.0;
-        jamStartTime = -1.0;
-        setFeederVelocity(0);
-        setHopperVelocity(0);
-        setGuideVelocities(0);
     }
 
     public void pulseHopper(double fastRPS, double slowRPS) {
@@ -540,17 +499,17 @@ public class TurretSubsystem extends SubsystemBase {
         ChassisSpeeds speeds = Drivetrain.getFieldRelativeSpeed();
         boolean nearTrench = robotPose.getX() >= 3.5 && robotPose.getX() <= 5.75;
 
-        // FSM DIRECTOR
         switch (currentState) {
             
             case IDLE:
                 stopMotors();
+                setShooterVelocity(5.0);
                 setHoodPosition(-0.3);
                 break;
 
             case AIMING:
                 double aimDist = autoAim(robotPose, speeds, targetHub);
-                setShooterVelocity(5.0); 
+                setShooterVelocity(5.0);
                 setHoodPosition(nearTrench ? 0 : m_hoodAngleMap.get(aimDist));
                 turretFeeder.stopMotor();
                 turretHopper.stopMotor();
@@ -568,7 +527,7 @@ public class TurretSubsystem extends SubsystemBase {
 
                 if (isShooterAtSpeed(targetSpeed)) { 
                     setFeederVelocity(90);
-                    setHopperVelocity(225);
+                    setHopperVelocity(45);
                     setGuideVelocities(70);
                 } else {
                     turretFeeder.stopMotor();
@@ -579,21 +538,13 @@ public class TurretSubsystem extends SubsystemBase {
                 break;
 
             case INTAKING_HOPPER:
-                turretTurner.stopMotor();
-                turretShooter.stopMotor();
                 setHoodPosition(-0.3);
-                setFeederVelocity(0);
-                setHopperVelocity(225.0);
-                setGuideVelocities(0);
+                setHopperVelocity(25);
                 break;
 
             case REVERSING_HOPPER:
-                turretTurner.stopMotor();
-                turretShooter.stopMotor();
                 setHoodPosition(-0.3);
-                setFeederVelocity(0);
                 setHopperVelocity(-225.0);
-                setGuideVelocities(0);
                 break;
         }
     }

@@ -12,7 +12,7 @@
         "y": 7.4204748873731345
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "T1Start"
     },
     {
       "anchor": {
@@ -86,20 +86,7 @@
     }
   ],
   "pointTowardsZones": [],
-  "eventMarkers": [
-    {
-      "name": "IntakeOn",
-      "waypointRelativePos": 1.6670416197975206,
-      "endWaypointRelativePos": null,
-      "command": null
-    },
-    {
-      "name": "IntakeOff",
-      "waypointRelativePos": 2.888638920134988,
-      "endWaypointRelativePos": null,
-      "command": null
-    }
-  ],
+  "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
