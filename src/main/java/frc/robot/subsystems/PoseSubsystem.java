@@ -22,63 +22,68 @@ public class PoseSubsystem extends SubsystemBase {
     final Field2d field = new Field2d();
     private final List<String> limelightNames = List.of("limelight-fleft", "limelight-fright");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
     private int loopCounter = 0;
-    private final Vector<N3> defaultStdDevs = VecBuilder.fill(0.1, 0.1, 0.4);
+    private final Vector<N3> defaultStdDevs = VecBuilder.fill(0.2, 0.2, 99999999);
     private final CommandSwerveDrivetrain drivetrain;
+    private double currentYaw;
     
-    public PoseSubsystem(CommandSwerveDrivetrain drivetrain) { //constructor
-        this.drivetrain = drivetrain;        
-        SmartDashboard.putData(field); 
-    }
-    
-    private Vector<N3> calculateStdDev(double distance) {
-        if (distance < 1.0) return defaultStdDevs; 
-
-        double xyUncertainty = 0.1 * Math.pow(distance, 4);
-        double thetaUncertainty = 0.4 * Math.pow(distance, 4);
+        public PoseSubsystem(CommandSwerveDrivetrain drivetrain) { //constructor
+            this.drivetrain = drivetrain;        
+            SmartDashboard.putData(field); 
+        }
         
-        
-        if (xyUncertainty < 0.1) xyUncertainty = 0.1;
-        if (thetaUncertainty < 999999999.0) thetaUncertainty = 9999999999999.0;
-
-        return VecBuilder.fill(xyUncertainty, xyUncertainty, thetaUncertainty); 
-    }
-
-    private void updateVision(String name) {
-        if (!LimelightHelpers.getTV(name)) {return;} //if limelight not exist, then dont even bother running the rest
+        private Vector<N3> calculateStdDev(double distance) {
+            if (distance < 1.0) return defaultStdDevs; 
     
-        var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
+            double xyUncertainty = 0.2 * Math.pow(distance, 2);
+            double thetaUncertainty = 0.4 * Math.pow(distance, 2);
             
-        if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0) //|| 
-            {return;}
+            
+            if (xyUncertainty < 0.2) xyUncertainty = 0.2;
+            if (thetaUncertainty < 999999999.0) thetaUncertainty = 9999999999999.0;
     
-        LimelightHelpers.SetRobotOrientation(name, drivetrain.getPigeon2().getYaw().getValueAsDouble(), 0, 0, 0, 0, 0); //gives MT2 the current rotation of the bot
+            return VecBuilder.fill(xyUncertainty, xyUncertainty, thetaUncertainty); 
+        }
     
-        Vector<N3> stdDevs = calculateStdDev(mt2.avgTagDist);
+        private void updateVision(String name) {
+            if (!LimelightHelpers.getTV(name)) {return;} //if limelight not exist, then dont even bother running the rest
+        
+            var mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(name);
+            
     
-        drivetrain.addVisionMeasurement(mt2.pose, mt2.timestampSeconds, stdDevs);
-    }
+            if (mt2 == null || mt2.tagCount == 0 || mt2.avgTagDist > 4.0) //|| 
+                {return;}
+        
+            LimelightHelpers.SetRobotOrientation(name, currentYaw, 0, 0, 0, 0, 0);
+        
+            Vector<N3> stdDevs = calculateStdDev(mt2.avgTagDist);
+        
+            drivetrain.addVisionMeasurement(mt2.pose, mt2.timestampSeconds, stdDevs);
+        }
+        
+        public Pose2d getCurrentPose() {
+            return drivetrain.getState().Pose;
+        }
     
-    public Pose2d getCurrentPose() {
-        return drivetrain.getState().Pose;
-    }
-
-    public double getDistToTarget(Translation2d targetPosition) {
-        return drivetrain.getState().Pose.getTranslation().getDistance(targetPosition);
-    }
-
-    public void printCurrentPose(){
-        System.out.println(drivetrain.getState().Pose);
-    }
+        public double getDistToTarget(Translation2d targetPosition) {
+            return drivetrain.getState().Pose.getTranslation().getDistance(targetPosition);
+        }
     
-    @Override
-    public void periodic() {
-        timeMS = Timer.getFPGATimestamp(); //20 ms
-        String activeCamera = limelightNames.get(loopCounter % limelightNames.size()); //i do this because it is really taxing on the RoboRio to calculate everything and process two limelights at the same time. by doing this, it's switching back and forth between the two which should give me some less lag
-        loopCounter++;
-        updateVision(activeCamera);
+        public void printCurrentPose(){
+            System.out.println(drivetrain.getState().Pose);
+        }
+        
+        @Override
+        public void periodic() {
+        currentYaw = drivetrain.getPigeon2().getYaw().getValueAsDouble();
+        timeMS = Timer.getFPGATimestamp();
+        updateVision("limelight-fleft");
+        updateVision("limelight-fright");
         //printCurrentPose();
+
         if (loopCounter % 2 == 0) {
             field.setRobotPose(drivetrain.getState().Pose);
         }
+        
+        loopCounter++;
     }
 }

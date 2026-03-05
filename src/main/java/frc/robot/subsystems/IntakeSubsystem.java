@@ -126,7 +126,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public double calculatedIntakeSpeeds(ChassisSpeeds fieldRelativeSpeeds) {
-        double robotVelocity = Math.hypot(fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond);
+        double robotVelocity = Math.sqrt((fieldRelativeSpeeds.vxMetersPerSecond * fieldRelativeSpeeds.vxMetersPerSecond) + (fieldRelativeSpeeds.vyMetersPerSecond * fieldRelativeSpeeds.vyMetersPerSecond));
         double robotVelocityInFeet = robotVelocity * 3.281;
         double targetIntakeVelocity = robotVelocityInFeet * 2;
         double intakeSpinSpeed = Math.max(30, targetIntakeVelocity * 2 * Math.PI);
@@ -225,8 +225,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
             case DOWN_INTAKING:
                 applyVerticalPosition(-0.05); 
-                applyIntakeVelocity(calculatedIntakeSpeeds(speeds));  
-                System.out.println(calculatedIntakeSpeeds(speeds));  
+                double targetSpeed = calculatedIntakeSpeeds(speeds);
+                applyIntakeVelocity(targetSpeed);  
+                SmartDashboard.putNumber("Target Intake Speed", targetSpeed);                
                 break;
             
             case OUTTAKING:

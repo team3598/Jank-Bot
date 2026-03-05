@@ -267,7 +267,7 @@ public class TurretSubsystem extends SubsystemBase {
         double virtX = targetX;
         double virtY = targetY;
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             double effectiveVx = fieldRelativeSpeeds.vxMetersPerSecond * dragFactor;
             double effectiveVy = fieldRelativeSpeeds.vyMetersPerSecond * dragFactor;
 
@@ -282,15 +282,18 @@ public class TurretSubsystem extends SubsystemBase {
             
             double dx = virtX - robotPose.getX();
             double dy = virtY - robotPose.getY();
-            distance = Math.hypot(dx, dy);
+            distance = Math.sqrt((dx * dx) + (dy * dy));
             
             t = calculateTimeOfFlight(distance);
             if (t > 2.0) t = 2.0; 
         }
 
-        Rotation2d targetRot = new Rotation2d(virtX - robotPose.getX(), virtY - robotPose.getY());
-        Rotation2d relativeRot = targetRot.minus(robotPose.getRotation());
-        double aimAngle = Math.IEEEremainder(relativeRot.getDegrees(), 360.0);
+        double dx = virtX - robotPose.getX();
+        double dy = virtY - robotPose.getY();
+        double targetAngleDeg = Math.toDegrees(Math.atan2(dy, dx));
+        double relativeAngle = targetAngleDeg - robotPose.getRotation().getDegrees();
+
+        double aimAngle = Math.IEEEremainder(relativeAngle, 360.0);
 
         double robotSpinRPS = fieldRelativeSpeeds.omegaRadiansPerSecond / (2 * Math.PI);
         double finalTarget = aimAngle + (-robotSpinRPS * rotationLookAhead * 360.0);

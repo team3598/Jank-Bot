@@ -23,7 +23,7 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.PoseSubsystem;
 import frc.robot.subsystems.IntakeSubsystem.IntakeStates;
 import frc.robot.subsystems.Turret.TurretSubsystem;
-import frc.robot.subsystems.Turret.TurretSubsystem.TurretState; // Import the FSM!
+import frc.robot.subsystems.Turret.TurretSubsystem.TurretState; 
 import frc.robot.commands.Autos.Alignment;
 import frc.robot.commands.TurretCalibrationCommand;
 import frc.robot.LimelightHelpers;
@@ -57,7 +57,7 @@ public class RobotContainer {
         
         NamedCommands.registerCommand("ShootAtHub", turret.getAutoAimAndShootCommand(hubPosition));
         NamedCommands.registerCommand("StopShooting", Commands.runOnce(() -> turret.setState(TurretState.IDLE)));
-        
+    
         NamedCommands.registerCommand("IntakeOn", Commands.runOnce(() -> intake.setState(IntakeStates.DOWN_INTAKING)));
         NamedCommands.registerCommand("IntakeOff", Commands.runOnce(() -> intake.setState(IntakeStates.IDLE)));
         NamedCommands.registerCommand("IntakeUp", Commands.runOnce(() -> intake.setState(IntakeStates.FOLDED)));
@@ -70,7 +70,7 @@ public class RobotContainer {
 
         NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
 
-        autoChooser = AutoBuilder.buildAutoChooser("T1ShootNeutral");
+        autoChooser = AutoBuilder.buildAutoChooser("StatesTest");
         SmartDashboard.putData("Auto Mode", autoChooser);
         
         turretCalibrationCommand.ignoringDisable(true).schedule();

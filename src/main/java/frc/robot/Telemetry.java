@@ -14,7 +14,6 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -106,7 +105,6 @@ public class Telemetry {
 
         /* Telemeterize the pose to a Field2d */
         fieldTypePub.set("Field2d");
-       
 
         m_poseArray[0] = state.Pose.getX();
         m_poseArray[1] = state.Pose.getY();
