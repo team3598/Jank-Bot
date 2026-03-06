@@ -1,0 +1,59 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 3.5737555555555556,
+        "y": 0.6085555555555562
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 4.573755555555553,
+        "y": 0.6085555555555562
+      },
+      "isLocked": false,
+      "linkedName": "(T2) Position Start"
+    },
+    {
+      "anchor": {
+        "x": 7.76611111111111,
+        "y": 1.2232999999999992
+      },
+      "prevControl": {
+        "x": 7.302533333333333,
+        "y": 0.5279333333333329
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "(T2) Position Balls"
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5561403508771924,
+      "rotationDegrees": 0.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0.0,
+    "rotation": -90.0
+  },
+  "reversed": false,
+  "folder": "T2ShootNeutral",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "useDefaultConstraints": true
+}
