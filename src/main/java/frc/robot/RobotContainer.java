@@ -4,31 +4,33 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.*;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import frc.robot.autos.Alignment;
+import frc.robot.autos.TurretCalibrationCommand;
 import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.TurretSubsystem;
+import frc.robot.utils.AllianceHandler;
 import frc.robot.vision.PoseSubsystem;
-import frc.robot.autos.*;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -51,28 +53,29 @@ public class RobotContainer {
 
     private final IntakeSubsystem intake = new IntakeSubsystem();
     private final TurretSubsystem turret = new TurretSubsystem();
-    private Alignment alignment = new Alignment();
+    //private Alignment alignment = new Alignment();
     private final PoseSubsystem poseSubsystem = new PoseSubsystem(drivetrain);
     private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, poseSubsystem);
-    public Translation2d hubPosition = new Translation2d(4.625, 4.035);
+
+    public Translation2d blueHubPosition = new Translation2d(4.625, 4.04);
+    public Translation2d redHubPosition = new Translation2d(11.925, 4.04);
     private boolean nearTrench = false;
 
     /* Path follower */
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
-        NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
+        //NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
         NamedCommands.registerCommand("RunIntakeCommand", Commands.startEnd(
             () -> intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed()),
             () -> intake.setIntakeVelocity(0)
         ));
-
         NamedCommands.registerCommand("IntakeOn", intake.beginIntakeCommand(() -> drivetrain.getFieldRelativeSpeed()));
         NamedCommands.registerCommand("IntakeOff", intake.endIntakeCommand());
         NamedCommands.registerCommand("IntakeDown", intake.intakeDown());
         NamedCommands.registerCommand("AgitateIntake", intake.intakeAgitate());
-        NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
-        NamedCommands.registerCommand("ShootAtHub", turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, hubPosition, nearTrench));
+        //NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
+        NamedCommands.registerCommand("ShootAtHub", turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench));
 
         NamedCommands.registerCommand("StopShooting", turret.runOnce(() -> {
             turret.stopMotors();
@@ -81,11 +84,11 @@ public class RobotContainer {
         }));
 
 
+        
         //CHANGE AUTO NAME HERE.
         autoChooser = AutoBuilder.buildAutoChooser("T1ShootNeutral");
         SmartDashboard.putData("Auto Mode", autoChooser);
-        //WILLIAM IF YOU FORGET YOU DIE A HORRIBLE DEATH.
-
+        //WILLIAM IF YOU FORGET YOU DIE A HORRIBLE DEATH. 
 
         configureBindings();
         
@@ -93,23 +96,41 @@ public class RobotContainer {
         CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
     }
 
+    public Translation2d getHubPos() {
+        if (AllianceHandler.checkAllianceSide() == Alliance.Red) {
+            return redHubPosition;
+        }
+        return blueHubPosition;
+    }
+
     private void configureBindings() {
+        double currentMaxSpeed;
+        if (turret.isShooting) {
+            currentMaxSpeed = MaxSpeed * 0.75;
+        } else {
+            currentMaxSpeed = MaxSpeed;
+        }
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
+            
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                drive.withVelocityX(-joystick.getLeftY() * currentMaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-joystick.getLeftX() * currentMaxSpeed) // Drive left with negative X (left)
                     .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 
+
+
         turret.setDefaultCommand(
             turret.run(() -> {
                 if (turret.aimingToggle) {
-                    turret.autoAim(poseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), hubPosition);
-                    if (poseSubsystem.getCurrentPose().getX() >= 3.5 && poseSubsystem.getCurrentPose().getX() <= 5.75) {
+                    turret.autoAim(poseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), () -> getHubPos());
+                    if ((poseSubsystem.getCurrentPose().getX() >= 3.5 && poseSubsystem.getCurrentPose().getX() <= 5.75) ||
+                         poseSubsystem.getCurrentPose().getX() >= 13.5 && poseSubsystem.getCurrentPose().getX() <= 11.25
+                    ) {
                         nearTrench = true;
                     } else {
                         nearTrench = false;
@@ -129,7 +150,7 @@ public class RobotContainer {
 
         joystick.cross().onTrue(Commands.runOnce(() -> turret.toggleAiming()));
 
-        joystick.L1().onTrue(
+        /*joystick.L1().onTrue(
             Commands.either(
                 alignment.toTrench1AS().andThen(alignment.toNeutralZoneFromT1()),
                 alignment.toNZTrench1().andThen(alignment.toT1FromNZ()),
@@ -143,14 +164,14 @@ public class RobotContainer {
                 alignment.toNZTrench2().andThen(alignment.toT2FromNZ()),
                 () -> poseSubsystem.getCurrentPose().getX() < 4.5
             )
-        );
+        );*/
 
         joystick.L2().toggleOnTrue(
             intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
         );
 
         joystick.R2().whileTrue(
-            turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, hubPosition, nearTrench)
+            turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench)
         );
 
         joystick.R2().and(joystick.L3().negate()).whileTrue(

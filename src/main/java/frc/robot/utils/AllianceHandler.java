@@ -7,9 +7,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 
-public class FMSTracker {
+public class AllianceHandler {
     private static String currentGameData = "";
-
 
     public static Alliance getActiveAlliance() {
         if (DriverStation.isAutonomous()) {
@@ -36,6 +35,10 @@ public class FMSTracker {
         else {
             return initialAlliance;
         }
+    }
+
+    public static Alliance checkAllianceSide() {
+        return DriverStation.getAlliance().orElse(Alliance.Blue);    
     }
 
     public static boolean isAllianceHubActive() {

@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.76611111111111,
-        "y": 1.2232999999999992
+        "x": 5.720322222222222,
+        "y": 0.7050296559905087
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.77975719131836,
-        "y": 1.770514343539551
+        "x": 5.892218268090155,
+        "y": 0.9309727164887294
       },
       "isLocked": false,
-      "linkedName": "(T2) Position Balls"
+      "linkedName": "(T2) Trench Bump"
     },
     {
       "anchor": {
-        "x": 7.776188888888889,
-        "y": 3.2187
+        "x": 5.720322222222222,
+        "y": 2.8461091340450766
       },
       "prevControl": {
-        "x": 7.781490540683196,
-        "y": 2.825690288871232
+        "x": 5.7200711743772255,
+        "y": 2.587888493475682
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "(T2) Position Middle Neutral"
+      "linkedName": null
     }
   ],
   "rotationTargets": [],
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 1.0,
+    "maxVelocity": 1.25,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -41,7 +41,7 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
+    "velocity": 0.0,
     "rotation": -90.0
   },
   "reversed": false,

@@ -23,7 +23,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "(T2) NeutralIntake"
+                  "pathName": "(T2) NeutralIntake1"
                 }
               },
               {
@@ -85,7 +85,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "(T2) NeutralIntake"
+                  "pathName": "(T2) NeutralIntake2"
                 }
               },
               {

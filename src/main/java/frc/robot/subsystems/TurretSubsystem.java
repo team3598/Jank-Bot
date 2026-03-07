@@ -139,7 +139,7 @@ public class TurretSubsystem extends SubsystemBase {
         hopperConfig.Slot0.kV = 0.1;
         hopperConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         hopperConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-        hopperConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
+        hopperConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
         turnerConfig.Feedback.SensorToMechanismRatio = 125.0/3.0; 
@@ -155,7 +155,7 @@ public class TurretSubsystem extends SubsystemBase {
         turnerConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         turnerConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         turnerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-        turnerConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
+        turnerConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
         
         final TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
         hoodConfig.MotionMagic.MotionMagicCruiseVelocity = 12.0; 
@@ -236,13 +236,13 @@ public class TurretSubsystem extends SubsystemBase {
         m_hoodAngleMap.put(5.5, 11.0);
     }
 
-    public double autoAim(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, Translation2d targetPosition) {
-        double distance = robotPose.getTranslation().getDistance(targetPosition);
+    public double autoAim(Pose2d robotPose, ChassisSpeeds fieldRelativeSpeeds, Supplier<Translation2d> targetPosition) {
+        double distance = robotPose.getTranslation().getDistance(targetPosition.get());
         double t = calculateTimeOfFlight(distance);
         double dragFactor = 0.85; 
         
-        double targetX = targetPosition.getX();
-        double targetY = targetPosition.getY();
+        double targetX = targetPosition.get().getX();
+        double targetY = targetPosition.get().getY();
         double virtX = targetX;
         double virtY = targetY;
 
@@ -332,7 +332,7 @@ public class TurretSubsystem extends SubsystemBase {
             () -> setHopperVelocity(0));
     }
 
-    public Command getAutoAimAndShootCommand(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench) {
+    public Command getAutoAimAndShootCommand(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Supplier<Translation2d> targetHub, boolean nearTrench) {
         return this.runEnd(
             () -> {
                 double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub);
@@ -364,7 +364,7 @@ public class TurretSubsystem extends SubsystemBase {
         );
     }
 
-    public Command getAutoAimAndShootCommandCalibration(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench, DoubleSupplier hoodPosition, DoubleSupplier flywheelPower) {
+    public Command getAutoAimAndShootCommandCalibration(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Supplier<Translation2d> targetHub, boolean nearTrench, DoubleSupplier hoodPosition, DoubleSupplier flywheelPower) {
         return this.runEnd(
             () -> {
                 double virtualDist = autoAim(pose.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), targetHub);
