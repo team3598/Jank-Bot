@@ -53,7 +53,7 @@ public class RobotContainer {
 
     private final IntakeSubsystem intake = new IntakeSubsystem();
     private final TurretSubsystem turret = new TurretSubsystem();
-    //private Alignment alignment = new Alignment();
+    private Alignment alignment = new Alignment();
     private final PoseSubsystem poseSubsystem = new PoseSubsystem(drivetrain);
     private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, poseSubsystem);
 
@@ -103,6 +103,10 @@ public class RobotContainer {
         return blueHubPosition;
     }
 
+    public double getXValueForDongle(){
+        return (AllianceHandler.checkAllianceSide() == Alliance.Red) ? 12.0 : 4.5;
+    }
+
     private void configureBindings() {
         double currentMaxSpeed;
         if (turret.isShooting) {
@@ -128,8 +132,9 @@ public class RobotContainer {
             turret.run(() -> {
                 if (turret.aimingToggle) {
                     turret.autoAim(poseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), () -> getHubPos());
-                    if ((poseSubsystem.getCurrentPose().getX() >= 3.5 && poseSubsystem.getCurrentPose().getX() <= 5.75) ||
-                         poseSubsystem.getCurrentPose().getX() >= 13.5 && poseSubsystem.getCurrentPose().getX() <= 11.25
+                    turret.setShooterVelocity(5.0);
+                    if ((poseSubsystem.getCurrentPose().getX() >= 3.5 && poseSubsystem.getCurrentPose().getX() <= 5.75) //||
+                         //poseSubsystem.getCurrentPose().getX() >= 13.5 && poseSubsystem.getCurrentPose().getX() <= 11.25
                     ) {
                         nearTrench = true;
                     } else {
@@ -137,6 +142,7 @@ public class RobotContainer {
                     }
                 } else {
                     turret.setHoodPosition(-0.3);
+                    turret.setShooterVelocity(5.0);
                 }
             })
         );
@@ -150,11 +156,13 @@ public class RobotContainer {
 
         joystick.cross().onTrue(Commands.runOnce(() -> turret.toggleAiming()));
 
-        /*joystick.L1().onTrue(
+        joystick.L1().onTrue(
             Commands.either(
                 alignment.toTrench1AS().andThen(alignment.toNeutralZoneFromT1()),
                 alignment.toNZTrench1().andThen(alignment.toT1FromNZ()),
-                () -> poseSubsystem.getCurrentPose().getX() < 4.5
+                AllianceHandler.checkAllianceSide() == Alliance.Red 
+                ? () -> poseSubsystem.getCurrentPose().getX() > getXValueForDongle() 
+                : () -> poseSubsystem.getCurrentPose().getX() < getXValueForDongle()
             )
         );
 
@@ -162,23 +170,26 @@ public class RobotContainer {
             Commands.either(
                 alignment.toTrench2AS().andThen(alignment.toNeutralZoneFromT2()),
                 alignment.toNZTrench2().andThen(alignment.toT2FromNZ()),
-                () -> poseSubsystem.getCurrentPose().getX() < 4.5
+                AllianceHandler.checkAllianceSide() == Alliance.Red 
+                ? () -> poseSubsystem.getCurrentPose().getX() > getXValueForDongle() 
+                : () -> poseSubsystem.getCurrentPose().getX() < getXValueForDongle()
             )
-        );*/
+        );
 
         joystick.L2().toggleOnTrue(
             intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
         );
 
         joystick.R2().whileTrue(
-            turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench)
+            turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench).alongWith(
+            intake.intakeAgitate())
         );
 
         joystick.R2().and(joystick.L3().negate()).whileTrue(
             intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
         );
 
-        joystick.L3().whileTrue(intake.intakeAgitate());
+        //joystick.L3().whileTrue(intake.intakeAgitate());
 
         joystick.R3().toggleOnTrue(
             intake.intakeDownAndOuttakeCommand().alongWith(

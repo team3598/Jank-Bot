@@ -139,7 +139,7 @@ public class TurretSubsystem extends SubsystemBase {
         hopperConfig.Slot0.kV = 0.1;
         hopperConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         hopperConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-        hopperConfig.CurrentLimits.SupplyCurrentLimit = 20.0;
+        hopperConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
         turnerConfig.Feedback.SensorToMechanismRatio = 125.0/3.0; 
@@ -155,7 +155,7 @@ public class TurretSubsystem extends SubsystemBase {
         turnerConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         turnerConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         turnerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-        turnerConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
+        turnerConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
         
         final TalonFXConfiguration hoodConfig = new TalonFXConfiguration();
         hoodConfig.MotionMagic.MotionMagicCruiseVelocity = 12.0; 
@@ -301,7 +301,7 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public boolean isShooterAtSpeed(double targetRPS) {
-        return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 4.5;
+        return Math.abs(turretShooter.getVelocity().getValueAsDouble() - targetRPS) < 3.5;
     }
 
     public boolean isHoodAtAngle(double targetAngle) {
@@ -340,11 +340,11 @@ public class TurretSubsystem extends SubsystemBase {
                 double targetSpeed = m_shooterSpeedMap.get(virtualDist);
                 double targetAngle = m_hoodAngleMap.get(virtualDist);
                 setShooterVelocity(targetSpeed);
-
+                
                 if (!nearTrench){
                     setHoodPosition(targetAngle);
                 } else {
-                    setHoodPosition(0);
+                    setHoodPosition(-0.2);
                 }
                 
                 if (isShooterAtSpeed(targetSpeed) && isHoodAtAngle(targetAngle)) {
@@ -357,7 +357,7 @@ public class TurretSubsystem extends SubsystemBase {
             },
             () -> {
                 stopMotors();
-                turretShooter.setControl(zeroVolts);
+                setShooterVelocity(5.0);
                 stopFeeding();
                 setHoodPosition(-0.3);
             }

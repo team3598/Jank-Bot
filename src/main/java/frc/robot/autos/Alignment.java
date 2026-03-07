@@ -24,10 +24,10 @@ public class Alignment{
     private final Pose2d blueNZtrench2 = new Pose2d(5.9, .7, Rotation2d.fromDegrees(0));
 
     private final Pose2d redTowerPosition = new Pose2d(1.6, 3.75, Rotation2d.fromDegrees(0));
-    private final Pose2d redTrench1 = new Pose2d(13.500, 7.4, Rotation2d.fromDegrees(0));
-    private final Pose2d redTrench2 = new Pose2d(13.375, .7, Rotation2d.fromDegrees(0));
-    private final Pose2d redNZtrench1 = new Pose2d(10.9, 7.4, Rotation2d.fromDegrees(0));
-    private final Pose2d redNZtrench2 = new Pose2d(10.9, .7, Rotation2d.fromDegrees(0));
+    private final Pose2d redTrench1 = new Pose2d(13.500, 7.4, Rotation2d.fromDegrees(180));
+    private final Pose2d redTrench2 = new Pose2d(13.375, .7, Rotation2d.fromDegrees(180));
+    private final Pose2d redNZtrench1 = new Pose2d(10.9, 7.4, Rotation2d.fromDegrees(180));
+    private final Pose2d redNZtrench2 = new Pose2d(10.9, .7, Rotation2d.fromDegrees(180));
 
     /*private Pose2d towerPosition;
     private Pose2d trench1;
@@ -37,7 +37,7 @@ public class Alignment{
 
     private final PathConstraints constraints = new PathConstraints(3, 3.0, Units.degreesToRadians(540), Units.degreesToRadians(720));
     //insert more positions for important places here
-    
+
     public Command alignToTower() {
         return Commands.defer(() -> {
             Pose2d target = (AllianceHandler.checkAllianceSide() == Alliance.Red) ? redTowerPosition : blueTowerPosition;
