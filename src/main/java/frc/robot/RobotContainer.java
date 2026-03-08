@@ -175,21 +175,20 @@ public class RobotContainer {
                 : () -> poseSubsystem.getCurrentPose().getX() < getXValueForDongle()
             )
         );
-
-        joystick.L2().toggleOnTrue(
+        
+        joystick.L2().whileTrue(
             intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
         );
 
         joystick.R2().whileTrue(
-            turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench).alongWith(
-            intake.intakeAgitate())
+            turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench)
         );
 
-        joystick.R2().and(joystick.L3().negate()).whileTrue(
+        joystick.L2().and(joystick.L3().negate()).whileTrue(
             intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
         );
 
-        //joystick.L3().whileTrue(intake.intakeAgitate());
+        joystick.L3().toggleOnTrue(intake.intakeAgitate());
 
         joystick.R3().toggleOnTrue(
             intake.intakeDownAndOuttakeCommand().alongWith(

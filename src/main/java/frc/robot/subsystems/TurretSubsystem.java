@@ -139,7 +139,7 @@ public class TurretSubsystem extends SubsystemBase {
         hopperConfig.Slot0.kV = 0.1;
         hopperConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         hopperConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-        hopperConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
+        hopperConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
         turnerConfig.Feedback.SensorToMechanismRatio = 125.0/3.0; 
@@ -170,11 +170,15 @@ public class TurretSubsystem extends SubsystemBase {
         guideLConfig.Feedback.SensorToMechanismRatio = 3.0;
         guideLConfig.Slot0.kP = 0;
         guideLConfig.Slot0.kV = 0.1;
+        guideLConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        guideLConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
 
         final TalonFXConfiguration guideRConfig = new TalonFXConfiguration();
         guideRConfig.Feedback.SensorToMechanismRatio = 3.0;
         guideRConfig.Slot0.kP = 0;
         guideRConfig.Slot0.kV = 0.1;
+        guideRConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        guideRConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
 
         final CANcoderConfiguration enc10TConfiguration = new CANcoderConfiguration();
         enc10TConfiguration.MagnetSensor.MagnetOffset = 0.41;
@@ -328,7 +332,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command outtakeHopper() {
         return runEnd(
-            () -> setHopperVelocity(-225), 
+            () -> setHopperVelocity(-100), 
             () -> setHopperVelocity(0));
     }
 
@@ -348,9 +352,9 @@ public class TurretSubsystem extends SubsystemBase {
                 }
                 
                 if (isShooterAtSpeed(targetSpeed) && isHoodAtAngle(targetAngle)) {
-                    setFeederVelocity(90);
+                    setFeederVelocity(80);
                     setHopperVelocity(50);
-                    setGuideVelocities(70);
+                    setGuideVelocities(40);
                 } else {
                     stopFeeding();    
                 }

@@ -126,10 +126,10 @@ public class IntakeSubsystem extends SubsystemBase {
             () -> {
                 if (Timer.getFPGATimestamp() % 1.0 < 0.3) {
                     this.setIntakeVerticalityPosition(3);
-                    this.setIntakeVelocity(30);
+                    this.setIntakeVelocity(10);
                 } else {
                     this.setIntakeVerticalityPosition(0.5);
-                    this.setIntakeVelocity(20);
+                    this.setIntakeVelocity(10);
                 }
             },
             

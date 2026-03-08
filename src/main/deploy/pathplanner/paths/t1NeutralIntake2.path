@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 5.75,
-        "y": 5.062933333333333
+        "x": 7.745955555555556,
+        "y": 6.444774774774776
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.749999999999998,
-        "y": 5.062933333333333
+        "x": 7.838215281092032,
+        "y": 6.812034056957539
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "t1shootneutralIntakePosition"
     },
     {
       "anchor": {
-        "x": 11.25,
-        "y": 7.562222222222221
+        "x": 7.745955555555556,
+        "y": 4.983108108108109
       },
       "prevControl": {
-        "x": 10.25,
-        "y": 7.562222222222221
+        "x": 7.624760987453036,
+        "y": 5.201767378806709
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "(T1) Position Intake Middle End"
     }
   ],
   "rotationTargets": [],
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.0,
+    "maxVelocity": 0.5,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 90.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "T1ShootNeutral",
   "idealStartingState": {
-    "velocity": 0,
-    "rotation": 0.0
+    "velocity": 0.5,
+    "rotation": 91.46880071438575
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

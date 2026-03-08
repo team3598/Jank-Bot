@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.745955555555556,
-        "y": 7.249811111111111
+        "x": 3.5393355855855866,
+        "y": 6.059605855855856
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.838215281092032,
-        "y": 7.617070393293874
+        "x": 4.239201599334783,
+        "y": 6.094878598605346
       },
       "isLocked": false,
-      "linkedName": "t1shootneutralIntakePosition"
+      "linkedName": null
     },
     {
       "anchor": {
-        "x": 7.756033333333333,
-        "y": 4.9722333333333335
+        "x": 1.2974549549549552,
+        "y": 5.941092342342342
       },
       "prevControl": {
-        "x": 7.634838765230813,
-        "y": 5.190892604031934
+        "x": 0.9832503421782088,
+        "y": 5.922030342620232
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "t1neutralintakeend"
+      "linkedName": "(B1) FrontOfDepot"
     }
   ],
   "rotationTargets": [],
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 0.5,
+    "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -41,14 +41,14 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
-    "rotation": 88.05851360908565
+    "velocity": 1.0,
+    "rotation": 0.0
   },
   "reversed": false,
-  "folder": "T1ShootNeutral",
+  "folder": "B1Depot",
   "idealStartingState": {
-    "velocity": 0.5,
-    "rotation": 91.46880071438575
+    "velocity": 0,
+    "rotation": 0.0
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }

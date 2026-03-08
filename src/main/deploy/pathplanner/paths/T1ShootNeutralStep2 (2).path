@@ -4,15 +4,15 @@
     {
       "anchor": {
         "x": 7.745955555555556,
-        "y": 5.812702702702702
+        "y": 4.983108108108109
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.994539246669863,
-        "y": 5.839276157728094
+        "x": 7.989499922887661,
+        "y": 5.03955402151913
       },
       "isLocked": false,
-      "linkedName": "t1neutralintakeend"
+      "linkedName": "(T1) Position Intake Middle End"
     },
     {
       "anchor": {
@@ -20,12 +20,12 @@
         "y": 7.380822222222222
       },
       "prevControl": {
-        "x": 7.138925815225507,
-        "y": 7.065371634471045
+        "x": 7.125713177996465,
+        "y": 7.017217331454198
       },
       "nextControl": {
-        "x": 5.57220189684763,
-        "y": 7.572173749138479
+        "x": 5.665316332630017,
+        "y": 7.569218053428515
       },
       "isLocked": false,
       "linkedName": null
@@ -36,8 +36,8 @@
         "y": 7.380822222222222
       },
       "prevControl": {
-        "x": 4.735761943628949,
-        "y": 7.29712861332006
+        "x": 4.5676458424454305,
+        "y": 7.291641174603208
       },
       "nextControl": null,
       "isLocked": false,
@@ -69,7 +69,7 @@
   "folder": "T1ShootNeutral",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 88.05851360908565
+    "rotation": 90.0
   },
   "useDefaultConstraints": true
 }

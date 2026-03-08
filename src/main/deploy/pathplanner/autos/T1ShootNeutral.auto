@@ -36,7 +36,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "t1NeutralIntake"
+                  "pathName": "T1NeutralIntake1"
                 }
               }
             ]
@@ -61,7 +61,7 @@
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 4.0
+                  "waitTime": 5.0
                 }
               },
               {
@@ -104,7 +104,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "t1NeutralIntake"
+                  "pathName": "T1NeutralIntake1"
                 }
               }
             ]
