@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -36,12 +37,19 @@ public class IntakeSubsystem extends SubsystemBase {
     private final MotionMagicVoltage intakeVerticalMotionMagic = new MotionMagicVoltage(0);
 
     public IntakeSubsystem() {
+
+        final VoltageConfigs voltageConfigs = new VoltageConfigs();
+        voltageConfigs.PeakForwardVoltage = 12.0; 
+        voltageConfigs.PeakReverseVoltage = -12.0; 
+        
         var talonFXconfigs = new TalonFXConfiguration();
         talonFXconfigs.Slot0.kP = 0.12;
         talonFXconfigs.Slot0.kV = 0.14;
         talonFXconfigs.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         talonFXconfigs.CurrentLimits.SupplyCurrentLimit = 60;
         talonFXconfigs.CurrentLimits.SupplyCurrentLimitEnable = true;
+        talonFXconfigs.CurrentLimits.StatorCurrentLimit = 60;
+        talonFXconfigs.CurrentLimits.StatorCurrentLimitEnable = true;
         talonFXconfigs.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         m_intake1.getConfigurator().apply(talonFXconfigs);
 
@@ -60,6 +68,8 @@ public class IntakeSubsystem extends SubsystemBase {
         intakeVConfig.CurrentLimits.SupplyCurrentLimit = 30;
         intakeVConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         intakeVConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        m_intake1.getConfigurator().apply(voltageConfigs);
 
         m_intakeVL.getConfigurator().apply(intakeVConfig);
         m_intakeVR.getConfigurator().apply(intakeVConfig);
@@ -172,7 +182,7 @@ public class IntakeSubsystem extends SubsystemBase {
         return m_intake1.getVelocity().getValueAsDouble();
     } 
 
-
+    
     @Override
     public void periodic() {
         //ChassisSpeeds speeds = drivetrain.getFieldRelativeSpeed();

@@ -9,6 +9,7 @@ import frc.robot.constants.TurretConstants;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TalonFXSConfigurator;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -121,6 +122,10 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public void configureMotors() {
+        final VoltageConfigs voltageConfigs = new VoltageConfigs();
+        voltageConfigs.PeakForwardVoltage = 12.0; 
+        voltageConfigs.PeakReverseVoltage = -12.0; 
+
         final TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
         flywheelConfig.Feedback.SensorToMechanismRatio = 1.6;
         flywheelConfig.Slot0.kP = 0.1;
@@ -128,18 +133,26 @@ public class TurretSubsystem extends SubsystemBase {
         flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         flywheelConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
         flywheelConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
+        
 
         final TalonFXConfiguration feederConfig = new TalonFXConfiguration();
         feederConfig.Slot0.kP = 0;
         feederConfig.Slot0.kV = 0.1;
+        feederConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        feederConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+        feederConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
+        feederConfig.CurrentLimits.StatorCurrentLimit = 40.0;
         feederConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         
         final TalonFXConfiguration hopperConfig = new TalonFXConfiguration();
         hopperConfig.Slot0.kP = 0;
         hopperConfig.Slot0.kV = 0.1;
-        hopperConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         hopperConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        hopperConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         hopperConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
+        hopperConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
+        hopperConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
         turnerConfig.Feedback.SensorToMechanismRatio = 125.0/3.0; 
@@ -171,6 +184,8 @@ public class TurretSubsystem extends SubsystemBase {
         guideLConfig.Slot0.kP = 0;
         guideLConfig.Slot0.kV = 0.1;
         guideLConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        guideLConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+        guideLConfig.CurrentLimits.StatorCurrentLimit = 40.0;
         guideLConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
 
         final TalonFXConfiguration guideRConfig = new TalonFXConfiguration();
@@ -178,7 +193,9 @@ public class TurretSubsystem extends SubsystemBase {
         guideRConfig.Slot0.kP = 0;
         guideRConfig.Slot0.kV = 0.1;
         guideRConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+        guideRConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         guideRConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
+        guideRConfig.CurrentLimits.StatorCurrentLimit = 40.0;
 
         final CANcoderConfiguration enc10TConfiguration = new CANcoderConfiguration();
         enc10TConfiguration.MagnetSensor.MagnetOffset = 0.41;
@@ -191,12 +208,25 @@ public class TurretSubsystem extends SubsystemBase {
         enc11TConfiguration.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
 
         turretTurner.getConfigurator().apply(turnerConfig);
+        turretTurner.getConfigurator().apply(voltageConfigs);
+
         turretShooter.getConfigurator().apply(flywheelConfig);
+
         turretFeeder.getConfigurator().apply(feederConfig);
+        turretFeeder.getConfigurator().apply(voltageConfigs);
+
         turretHood.getConfigurator().apply(hoodConfig);
+        turretHood.getConfigurator().apply(voltageConfigs);
+
         turretHopper.getConfigurator().apply(hopperConfig);
+        turretHopper.getConfigurator().apply(voltageConfigs);
+
         turretGuideL.getConfigurator().apply(guideLConfig);
+        turretGuideL.getConfigurator().apply(voltageConfigs);
+
         turretGuideR.getConfigurator().apply(guideRConfig);
+        turretGuideR.getConfigurator().apply(voltageConfigs);
+
         enc10T.getConfigurator().apply(enc10TConfiguration);
         enc11T.getConfigurator().apply(enc11TConfiguration);
     }

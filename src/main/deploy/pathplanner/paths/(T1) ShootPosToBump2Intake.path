@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.806422222222222,
-        "y": 6.2420333333333335
+        "x": 3.624144444444445,
+        "y": 0.6287111111111108
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.898681947758699,
-        "y": 6.609292615516097
+        "x": 8.098677777777777,
+        "y": 0.6186333333333334
       },
       "isLocked": false,
-      "linkedName": "t1neutralstep3"
+      "linkedName": "(citrusdestroyer) shoot pos"
     },
     {
       "anchor": {
-        "x": 7.786266666666666,
-        "y": 5.3350333333333335
+        "x": 7.826577777777777,
+        "y": 1.2535333333333336
       },
       "prevControl": {
-        "x": 7.6650720985641465,
-        "y": 5.553692604031934
+        "x": 7.9250576024225685,
+        "y": 1.023747075828819
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "(T1) Position Intake Middle End"
+      "linkedName": null
     }
   ],
   "rotationTargets": [],
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 0.5,
+    "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 90.0
+    "rotation": -90.85509739626669
   },
   "reversed": false,
-  "folder": "T1ShootNeutral",
+  "folder": "T1Disturb",
   "idealStartingState": {
-    "velocity": 0.5,
-    "rotation": 91.46880071438575
+    "velocity": 0,
+    "rotation": 180.0
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }

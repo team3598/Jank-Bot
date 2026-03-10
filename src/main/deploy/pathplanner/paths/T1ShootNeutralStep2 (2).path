@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.745955555555556,
-        "y": 4.983108108108109
+        "x": 7.786266666666666,
+        "y": 5.3350333333333335
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.989499922887661,
-        "y": 5.03955402151913
+        "x": 8.029811033998772,
+        "y": 5.391479246744355
       },
       "isLocked": false,
       "linkedName": "(T1) Position Intake Middle End"

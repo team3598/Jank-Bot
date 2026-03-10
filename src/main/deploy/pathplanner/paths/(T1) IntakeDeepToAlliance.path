@@ -3,50 +3,34 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.776188888888889,
-        "y": 3.2187
+        "x": 7.8165,
+        "y": 1.5961777777777773
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.671137317822303,
-        "y": 1.5268866437588664
+        "x": 7.937433333333333,
+        "y": 0.5480888888888886
       },
       "isLocked": false,
-      "linkedName": "(T2) Position Middle Neutral"
+      "linkedName": "(T1) Position Intake Deep End"
     },
     {
       "anchor": {
-        "x": 6.375377777777777,
-        "y": 0.6790999999999996
+        "x": 3.624144444444445,
+        "y": 0.6287111111111108
       },
       "prevControl": {
-        "x": 6.625377777777777,
-        "y": 0.6790999999999996
-      },
-      "nextControl": {
-        "x": 5.913843795167447,
-        "y": 0.6790999999999997
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 3.704766666666667,
-        "y": 0.6790999999999996
-      },
-      "prevControl": {
-        "x": 4.490833333333334,
-        "y": 0.6992555555555555
+        "x": 3.872432095525164,
+        "y": 0.6579214230029603
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "(T2) Position Start Shoot"
+      "linkedName": "(citrusdestroyer) shoot pos"
     }
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 1.0,
+      "waypointRelativePos": 0.5175438596491267,
       "rotationDegrees": 180.0
     }
   ],
@@ -66,10 +50,10 @@
     "rotation": 180.0
   },
   "reversed": false,
-  "folder": "T2ShootNeutral",
+  "folder": "T1Disturb",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -90.0
+    "rotation": 90.0
   },
   "useDefaultConstraints": true
 }

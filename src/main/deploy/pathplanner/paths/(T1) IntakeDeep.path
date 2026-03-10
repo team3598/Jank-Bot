@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.806422222222222,
-        "y": 6.2420333333333335
+        "x": 7.8165,
+        "y": 3.138077777777778
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.898681947758699,
-        "y": 6.609292615516097
+        "x": 7.9579484241341865,
+        "y": 3.424649444464335
       },
       "isLocked": false,
-      "linkedName": "t1neutralstep3"
+      "linkedName": "(T1) Position Bump 2 Balls"
     },
     {
       "anchor": {
-        "x": 7.786266666666666,
-        "y": 5.3350333333333335
+        "x": 7.8165,
+        "y": 1.5961777777777773
       },
       "prevControl": {
-        "x": 7.6650720985641465,
-        "y": 5.553692604031934
+        "x": 7.7198508547561975,
+        "y": 1.9571661580492146
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "(T1) Position Intake Middle End"
+      "linkedName": "(T1) Position Intake Deep End"
     }
   ],
   "rotationTargets": [],
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 0.5,
+    "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -41,14 +41,14 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
+    "velocity": 0.0,
     "rotation": 90.0
   },
   "reversed": false,
-  "folder": "T1ShootNeutral",
+  "folder": "T1Disturb",
   "idealStartingState": {
-    "velocity": 0.5,
-    "rotation": 91.46880071438575
+    "velocity": 0.75,
+    "rotation": 90.0
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }

@@ -16,16 +16,16 @@
     },
     {
       "anchor": {
-        "x": 7.745955555555556,
-        "y": 6.444774774774776
+        "x": 7.806422222222222,
+        "y": 6.2420333333333335
       },
       "prevControl": {
-        "x": 7.983592342342343,
-        "y": 8.005202702702704
+        "x": 8.04405900900901,
+        "y": 7.80246126126127
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "t1shootneutralIntakePosition"
+      "linkedName": "t1neutralstep3"
     }
   ],
   "rotationTargets": [
@@ -64,7 +64,7 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
+    "velocity": 0.5,
     "rotation": 91.46880071438575
   },
   "reversed": false,
