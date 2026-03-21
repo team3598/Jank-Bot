@@ -20,7 +20,7 @@ public class PoseSubsystem extends SubsystemBase {
 
     public static double timeMS = Timer.getFPGATimestamp();
     final Field2d field = new Field2d();
-    private final List<String> limelightNames = List.of("limelight-fleft", "limelight-fright");//, "limelight-fright"); //include limelight-fright later on when you figure out how to get avgs between two limelights
+    private final List<String> limelightNames = List.of("limelight-fleft", "limelight-fright");//, "limelight-bright", "limelight-bleft");
     private int loopCounter = 0;
     private final CommandSwerveDrivetrain drivetrain;
     
@@ -31,7 +31,7 @@ public class PoseSubsystem extends SubsystemBase {
         
         private Vector<N3> calculateStdDev(double distance) {
 
-            double xyUncertainty = 0.1 * Math.pow(distance, 2);
+            double xyUncertainty = 0.2 * Math.pow(distance, 2);
             double thetaUncertainty = 0.4 * Math.pow(distance, 2);
             
             
@@ -74,7 +74,7 @@ public class PoseSubsystem extends SubsystemBase {
         public void periodic() {
             timeMS = Timer.getFPGATimestamp();
             String activeCamera = limelightNames.get(loopCounter % limelightNames.size()); //i do this because it is really taxing on the RoboRio to calculate everything and process two limelights at the same time. by doing this, it's switching back and forth between the two which should give me some less lag
-            updateVision(activeCamera);            
+            updateVision(activeCamera);
             //updateVision("limelight-fright");
             //printCurrentPose();
 

@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.2974549549549552,
-        "y": 5.941092342342342
+        "x": 1.448671411625149,
+        "y": 5.923238434163701
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.5346257794675844,
-        "y": 5.862035400838135
+        "x": 1.7822064056939508,
+        "y": 5.9339976275207595
       },
       "isLocked": false,
       "linkedName": "(B1) FrontOfDepot"
     },
     {
       "anchor": {
-        "x": 0.7345157657657659,
-        "y": 5.941092342342342
+        "x": 0.5341399762752084,
+        "y": 5.923238434163701
       },
       "prevControl": {
-        "x": 0.4849471724720169,
-        "y": 5.955772847830209
+        "x": 0.28457138298145934,
+        "y": 5.937918939651568
       },
       "nextControl": null,
       "isLocked": false,
@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.0,
+    "maxVelocity": 0.5,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -50,5 +50,5 @@
     "velocity": 1.0,
     "rotation": 0.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

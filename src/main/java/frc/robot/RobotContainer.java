@@ -22,7 +22,12 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.autos.Alignment;
 import frc.robot.autos.TurretCalibrationCommand;
 import frc.robot.constants.TunerConstants;
@@ -33,6 +38,9 @@ import frc.robot.utils.AllianceHandler;
 import frc.robot.vision.PoseSubsystem;
 
 public class RobotContainer {
+    private final SlewRateLimiter xLimiter = new SlewRateLimiter(4.0);
+    private final SlewRateLimiter yLimiter = new SlewRateLimiter(4.0);
+    private final SlewRateLimiter rotLimiter = new SlewRateLimiter(4.0);
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
@@ -47,24 +55,29 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandPS4Controller joystick = new CommandPS4Controller(0);
+    private final CommandPS5Controller joystick = new CommandPS5Controller(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
-    private final IntakeSubsystem intake = new IntakeSubsystem();
-    private final TurretSubsystem turret = new TurretSubsystem();
+   
     private Alignment alignment = new Alignment();
     private final PoseSubsystem poseSubsystem = new PoseSubsystem(drivetrain);
-    private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, poseSubsystem);
-
+    private final IntakeSubsystem intake = new IntakeSubsystem();
+    private final TurretSubsystem turret = new TurretSubsystem();
     public Translation2d blueHubPosition = new Translation2d(4.625, 4.04);
     public Translation2d redHubPosition = new Translation2d(11.925, 4.04);
+    public Translation2d blue1PassPosition = new Translation2d(2.000, 6.700); //heh 67 heheheh
+    public Translation2d blue2PassPosition = new Translation2d(2.000, 1.500);
+    public Translation2d red1PassPosition = new Translation2d(14.000, 1.500); 
+    public Translation2d red2PassPosition = new Translation2d(14.000, 6.700);
+    private TurretCalibrationCommand turretCalibrationCommand = new TurretCalibrationCommand(turret, poseSubsystem);
     private boolean nearTrench = false;
 
     /* Path follower */
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
+        turret.setDependencies(poseSubsystem, drivetrain);
         //NamedCommands.registerCommand("AlignToTower", alignment.alignToTower());
         NamedCommands.registerCommand("RunIntakeCommand", Commands.startEnd(
             () -> intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed()),
@@ -83,12 +96,10 @@ public class RobotContainer {
             turret.setHoodPosition(-0.3);
         }));
 
-
-        
+        turretCalibrationCommand.ignoringDisable(true).schedule();
         //CHANGE AUTO NAME HERE.
         autoChooser = AutoBuilder.buildAutoChooser("T1ShootNeutral");
         SmartDashboard.putData("Auto Mode", autoChooser);
-        //WILLIAM IF YOU FORGET YOU DIE A HORRIBLE DEATH. 
 
         configureBindings();
         
@@ -103,36 +114,52 @@ public class RobotContainer {
         return blueHubPosition;
     }
 
+    public Translation2d getPassPos() {
+        boolean isRed = (AllianceHandler.checkAllianceSide() == Alliance.Red);
+        boolean isUpperHalf = (poseSubsystem.getCurrentPose().getY() > 4.025);
+
+        if (isRed) { 
+            return isUpperHalf ? red2PassPosition : red1PassPosition;
+        } else {
+            return isUpperHalf ? blue1PassPosition : blue2PassPosition;
+        }
+    }
+    
+
     public double getXValueForDongle(){
         return (AllianceHandler.checkAllianceSide() == Alliance.Red) ? 12.0 : 4.5;
     }
 
     private void configureBindings() {
-        double currentMaxSpeed;
-        if (turret.isShooting) {
-            currentMaxSpeed = MaxSpeed * 0.75;
-        } else {
-            currentMaxSpeed = MaxSpeed;
-        }
+        Trigger isStarving = new Trigger(() -> turret.getFlywheelStatorCurrent() < 50.0).and(() -> turret.isShooting)
+        .debounce(0.5);
+
+        
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
-            
-            // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * currentMaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * currentMaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
+            drivetrain.applyRequest(() -> {
+            boolean needSlow = turret.isShooting || intake.isIntaking;
+            double joystickX = needSlow ? MathUtil.clamp(-joystick.getLeftY(), -0.2, 0.2) : -joystick.getLeftY();
+            double joystickY = needSlow ? MathUtil.clamp(-joystick.getLeftX(), -0.2, 0.2) : -joystick.getLeftX();
+
+            /*//double speedMultiplier = needSlow ? 0.4 : 1.0; 
+            double filteredX = xLimiter.calculate(joystickX);
+            double filteredY = yLimiter.calculate(joystickY);
+            double filteredRot = rotLimiter.calculate(-joystick.getRightX());*/
+
+            return drive.withVelocityX(joystickX * MaxSpeed)// * speedMultiplier)
+                    .withVelocityY(joystickY * MaxSpeed)// * speedMultiplier)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+            })
         );
-
-
 
         turret.setDefaultCommand(
             turret.run(() -> {
                 if (turret.aimingToggle) {
                     turret.autoAim(poseSubsystem.getCurrentPose(), drivetrain.getFieldRelativeSpeed(), () -> getHubPos());
                     turret.setShooterVelocity(5.0);
+                    //turret.setSpindexerVelocity(15);
                     if ((poseSubsystem.getCurrentPose().getX() >= 3.5 && poseSubsystem.getCurrentPose().getX() <= 5.75) //||
                          //poseSubsystem.getCurrentPose().getX() >= 13.5 && poseSubsystem.getCurrentPose().getX() <= 11.25
                     ) {
@@ -143,6 +170,7 @@ public class RobotContainer {
                 } else {
                     turret.setHoodPosition(-0.3);
                     turret.setShooterVelocity(5.0);
+                    //turret.setSpindexerVelocity(15);
                 }
             })
         );
@@ -155,7 +183,8 @@ public class RobotContainer {
         );
 
         joystick.cross().onTrue(Commands.runOnce(() -> turret.toggleAiming()));
-
+        
+        /* 
         joystick.L1().onTrue(
             Commands.either(
                 alignment.toTrench1AS().andThen(alignment.toNeutralZoneFromT1()),
@@ -175,24 +204,37 @@ public class RobotContainer {
                 : () -> poseSubsystem.getCurrentPose().getX() < getXValueForDongle()
             )
         );
-        
-        joystick.L2().whileTrue(
-            intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
-        );
+        */
 
+        /*joystick.R2().whileTrue(  `
+            turret.getAutoAimAndShootCommandCalibration(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench, () -> turretCalibrationCommand.hoodTunerNumber, () -> turretCalibrationCommand.flywheelTunerNumber)
+        ); *///this is for calibration and tuning
+        
         joystick.R2().whileTrue(
             turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getHubPos(), nearTrench)
+            //.alongWith(
+            //intake.slowlyAgitateAndSpinCommand()
+            //)
         );
 
+        joystick.R1().whileTrue(
+            turret.getAutoAimAndShootCommand(poseSubsystem, drivetrain, () -> getPassPos(), nearTrench)
+        );
+
+        /*joystick.R2().and(isStarving).onTrue(
+            intake.slowlyAgitateAndSpinCommand()
+        );*/
+        
+
         joystick.L2().and(joystick.L3().negate()).whileTrue(
-            intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
+                intake.intakeDownAndIntakeCommand(() -> drivetrain.getFieldRelativeSpeed())
         );
 
         joystick.L3().toggleOnTrue(intake.intakeAgitate());
 
-        joystick.R3().toggleOnTrue(
-            intake.intakeDownAndOuttakeCommand().alongWith(
-            turret.outtakeHopper()));
+        joystick.R3().whileTrue(
+            intake.intakeDownAndOuttakeCommand()
+        );
 
         joystick.povUp().onTrue(intake.intakeUp());
         joystick.povDown().onTrue(intake.intakeDown());

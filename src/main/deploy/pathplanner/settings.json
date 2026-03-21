@@ -4,15 +4,16 @@
   "holonomicMode": true,
   "pathFolders": [
     "B1Depot",
-    "T1Disturb",
+    "T1ShootNeutralDepot",
     "T1CorralFuel",
     "T1ShootNeutral",
-    "T2ShootNeutral"
+    "T2ShootNeutral",
+    "citrusdestroyer (buns)"
   ],
   "autoFolders": [
     "New Folder"
   ],
-  "defaultMaxVel": 3.0,
+  "defaultMaxVel": 4.0,
   "defaultMaxAccel": 3.0,
   "defaultMaxAngVel": 540.0,
   "defaultMaxAngAccel": 720.0,

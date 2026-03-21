@@ -5,22 +5,15 @@
     "data": {
       "commands": [
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "T1ShootNeutralStep1"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "IntakeDown"
-                }
-              }
-            ]
+            "name": "IntakeDown"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "T1ShootNeutralStep1"
           }
         },
         {
@@ -28,15 +21,15 @@
           "data": {
             "commands": [
               {
-                "type": "named",
-                "data": {
-                  "name": "IntakeOn"
-                }
-              },
-              {
                 "type": "path",
                 "data": {
                   "pathName": "T1NeutralIntake1"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "IntakeOn"
                 }
               }
             ]
@@ -59,15 +52,15 @@
           "data": {
             "commands": [
               {
-                "type": "wait",
-                "data": {
-                  "waitTime": 3.0
-                }
-              },
-              {
                 "type": "named",
                 "data": {
                   "name": "ShootAtHub"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 3.5
                 }
               },
               {
@@ -80,21 +73,15 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "T1ToDepot"
+          }
+        },
+        {
           "type": "named",
           "data": {
             "name": "StopShooting"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "IntakeOff"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "T1ShootNeutralStep3"
           }
         },
         {
@@ -110,7 +97,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "t1NeutralIntake2"
+                  "pathName": "(B1) DepotCollect"
                 }
               }
             ]
@@ -125,7 +112,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "T1ShootNeutralStep2 (2)"
+            "pathName": "(B1) FromDepotToShoot"
           }
         },
         {
@@ -133,15 +120,15 @@
           "data": {
             "commands": [
               {
-                "type": "wait",
-                "data": {
-                  "waitTime": 3.0
-                }
-              },
-              {
                 "type": "named",
                 "data": {
                   "name": "ShootAtHub"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 3.5
                 }
               },
               {
@@ -151,12 +138,6 @@
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopShooting"
           }
         },
         {

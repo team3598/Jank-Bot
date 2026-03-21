@@ -3,48 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.375,
-        "y": 0.7
+        "x": 3.4830555555555556,
+        "y": 7.380822222222222
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.7195729297769375,
-        "y": 0.6960621397767603
+        "x": 4.313872363994871,
+        "y": 7.558271528322335
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "t1shootneutralstep2"
     },
     {
       "anchor": {
-        "x": 5.9,
-        "y": 0.7
+        "x": 1.448671411625149,
+        "y": 5.923238434163701
       },
       "prevControl": {
-        "x": 5.583665864607689,
-        "y": 0.5607425144906126
-      },
-      "nextControl": {
-        "x": 7.061888014348776,
-        "y": 1.211489546080894
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 6.57,
-        "y": 3.901
-      },
-      "prevControl": {
-        "x": 6.340395538890961,
-        "y": 3.8020970605147264
+        "x": 1.8762504711267667,
+        "y": 6.698891009366148
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "(B1) FrontOfDepot"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.4316163410301955,
+      "rotationDegrees": -90.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -57,14 +46,14 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
-    "rotation": 180.0
+    "velocity": 1.0,
+    "rotation": 0.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "T1ShootNeutralDepot",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "useDefaultConstraints": true
 }

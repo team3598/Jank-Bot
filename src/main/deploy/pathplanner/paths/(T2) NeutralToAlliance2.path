@@ -4,12 +4,12 @@
     {
       "anchor": {
         "x": 5.720322222222222,
-        "y": 2.8461091340450766
+        "y": 2.534092526690391
       },
       "prevControl": null,
       "nextControl": {
         "x": 6.623856385360301,
-        "y": 1.4223784491016536
+        "y": 1.110361841746968
       },
       "isLocked": false,
       "linkedName": "(T2) Position Middle Bump"
@@ -54,7 +54,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 3.0,
+    "maxVelocity": 4.0,
     "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
