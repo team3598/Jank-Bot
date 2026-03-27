@@ -16,7 +16,12 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -37,9 +42,13 @@ import java.util.function.Supplier;
 public class TurretSubsystem extends SubsystemBase {
     private final TalonFX turretTurner = TurretConstants.turretTurner;
     private final TalonFX turretShooter = TurretConstants.turretShooter;
-    private final TalonFX turretFeeder = TurretConstants.turretFeeder;
+    //private final TalonFX turretFeeder = TurretConstants.turretFeeder;
+    private final SparkFlex turretFeeder = TurretConstants.turretFeeder;
+    private final SparkClosedLoopController feederPID = turretFeeder.getClosedLoopController();
     private final TalonFX turretHood = TurretConstants.turretHood;
     private final TalonFX turretHopper = TurretConstants.turretHopper;
+    private final TalonFX turretWillyL = TurretConstants.turretWillyL;
+    private final TalonFX turretWillyR = TurretConstants.turretWillyR;
     
     //private final CANcoder enc10T = TurretConstants.encoder10T;
     //private final CANcoder enc11T = TurretConstants.encoder11T;
@@ -84,17 +93,36 @@ public class TurretSubsystem extends SubsystemBase {
         flywheelConfig.Slot0.kV = 0.15;
         flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
-        final TalonFXConfiguration feederConfig = new TalonFXConfiguration();
+        /*final TalonFXConfiguration feederConfig = new TalonFXConfiguration();
         feederConfig.Slot0.kP = 0;
         feederConfig.Slot0.kV = 0.1;
-        feederConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        feederConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;*/
         
+        final TalonFXConfiguration spindexerConfig = new TalonFXConfiguration();
+        spindexerConfig.Slot0.kP = 0;
+        spindexerConfig.Slot0.kV = 0.1;
+        spindexerConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
         final TalonFXConfiguration hopperConfig = new TalonFXConfiguration();
         hopperConfig.Slot0.kP = 0;
         hopperConfig.Slot0.kV = 0.1;
         hopperConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         //hopperConfig.CurrentLimits.StatorCurrentLimitEnable = true;
         //hopperConfig.CurrentLimits.StatorCurrentLimit = 60.0;
+
+        SparkFlexConfig feederConfig = new SparkFlexConfig();
+        feederConfig
+            .inverted(false) // Maps to your old CounterClockwise_Positive
+            .idleMode(com.revrobotics.spark.config.SparkBaseConfig.IdleMode.kCoast)
+            .smartCurrentLimit(50)
+            .secondaryCurrentLimit(70);
+        feederConfig.closedLoop
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .p(0.2) 
+            .i(0.0)
+            .d(0.0)
+            .velocityFF(0.15); 
+        turretFeeder.configure(feederConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         final TalonFXConfiguration turnerConfig = new TalonFXConfiguration();
         turnerConfig.Feedback.SensorToMechanismRatio = 41.66666; 
@@ -122,11 +150,26 @@ public class TurretSubsystem extends SubsystemBase {
         hoodConfig.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         hoodConfig.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -0.3; 
 
+        final TalonFXConfiguration willyLConfig = new TalonFXConfiguration();
+        willyLConfig.Slot0.kP = 0;
+        willyLConfig.Slot0.kV = 0.1;
+        willyLConfig.Feedback.SensorToMechanismRatio = (21/24) * 3;
+        willyLConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
+        final TalonFXConfiguration willyRConfig = new TalonFXConfiguration();
+        willyRConfig.Slot0.kP = 0;
+        willyRConfig.Slot0.kV = 0.1;
+        willyRConfig.Feedback.SensorToMechanismRatio = (21/19) * 3.0;
+        willyRConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
         turretTurner.getConfigurator().apply(turnerConfig);
         turretShooter.getConfigurator().apply(flywheelConfig);
-        turretFeeder.getConfigurator().apply(feederConfig);
+        //turretFeeder.getConfigurator().apply(feederConfig);
         turretHood.getConfigurator().apply(hoodConfig);
         turretHopper.getConfigurator().apply(hopperConfig);
+        turretWillyL.getConfigurator().apply(willyLConfig);
+        turretWillyR.getConfigurator().apply(willyRConfig);
+
     }
 
     /*private void seedTurretPosition() {
@@ -196,7 +239,7 @@ public class TurretSubsystem extends SubsystemBase {
         double finalTarget = -(aimAngle + (-robotSpinRPS * rotationLookAhead * 360.0));
         //finalTarget = MathUtil.inputModulus(finalTarget, -360, 0);
 
-        moveTurretAngle(((finalTarget / 360.0)));
+        //moveTurretAngle(((finalTarget / 360.0)));
         
         return virtualDist;
     }
@@ -228,7 +271,7 @@ public class TurretSubsystem extends SubsystemBase {
         double currentTime = PoseSubsystem.timeMS;
 
         if (unjamEndTime > 0 && currentTime < unjamEndTime) {
-            setHopperVelocity(-40);
+            setWillySpeed(-40);
             setFeederVelocity(-20);
             jamStartTime = -1.0; 
             return true; 
@@ -247,12 +290,12 @@ public class TurretSubsystem extends SubsystemBase {
                 jamStartTime = -1.0; 
             } else {
                 setFeederVelocity(90);
-                setHopperVelocity(50);
+                setWillySpeed(50);
             }
         } else {
             jamStartTime = -1.0; 
             setFeederVelocity(90);
-            setHopperVelocity(50);
+            setWillySpeed(50);
         }
         return false;
     }
@@ -261,7 +304,7 @@ public class TurretSubsystem extends SubsystemBase {
         unjamEndTime = -1.0;
         jamStartTime = -1.0;
         setFeederVelocity(0);
-        setHopperVelocity(0);
+        setWillySpeed(0);
     }
 
     public Command getAutoAimAndShootCommand(PoseSubsystem pose, CommandSwerveDrivetrain drivetrain, Translation2d targetHub, boolean nearTrench) {
@@ -278,11 +321,12 @@ public class TurretSubsystem extends SubsystemBase {
                     setHoodPosition(0);
                 }
 
-                if (isShooterAtSpeed(targetSpeed) && isTurretAligned(1.5)) {
-                    runFeederWithUnjam();
-                } else {
-                    stopFeeding(); 
-                }
+                //if (isShooterAtSpeed(targetSpeed)) {
+                    setFeederVelocity(60);
+                    setWillySpeed(65);  
+                //} else {
+                   // stopFeeding();
+                //}
             },
             () -> {
                 stopMotors();
@@ -339,28 +383,36 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public void setFeederVelocity(double rps) {
-        turretFeeder.setControl(velocity.withVelocity(rps));
+        //turretFeeder.setControl(velocity.withVelocity(rps));
+        feederPID.setReference(rps * 60.0, SparkFlex.ControlType.kVelocity);
     }
 
     public void setHoodPosition(double position) {
         turretHood.setControl(hoodMMRequest.withPosition(position));
     }
 
-    public void setHopperVelocity(double rps) {
-        turretHopper.setControl(velocity.withVelocity(rps));
+    public void setWillySpeed(double rps) {
+        turretWillyL.setControl(velocity.withVelocity(-rps));
+        turretWillyR.setControl(velocity.withVelocity(rps));
     }
 
     public double getFeederSpeed(){
-        return turretFeeder.getVelocity().getValueAsDouble();
+        //return turretFeeder.getVelocity().getValueAsDouble();
+        return turretFeeder.getEncoder().getVelocity() / 60.0;
     }
 
     public double getFlywheelSpeed(){
         return turretShooter.getVelocity().getValueAsDouble();
     }
 
-    public double getHopperSpeed()
+    public double getLeftWillySpeed()
     {
-        return turretHopper.getVelocity().getValueAsDouble();
+        return turretWillyL.getVelocity().getValueAsDouble();
+    }
+
+    public double getRightWillySpeed()
+    {
+        return turretWillyR.getVelocity().getValueAsDouble();
     }
 
     public Command goToHoodAngle(double degrees) {
@@ -383,7 +435,7 @@ public class TurretSubsystem extends SubsystemBase {
         ).andThen(
             this.run(()->{
                 setFeederVelocity(100);
-                setHopperVelocity(50);
+                setWillySpeed(50);
             })
         ).finallyDo(
             (interrupted)->{
@@ -403,10 +455,12 @@ public class TurretSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        SmartDashboard.putNumber("Left Willy Speed", getLeftWillySpeed());
+        SmartDashboard.putNumber("Right Willy Speed", getRightWillySpeed());
         //System.out.println("FlywheelSpeed: " + getFlywheelSpeed() + ", Turret Turner Position: " + turretTurner.getPosition().getValueAsDouble());
         //double error = turretTurner.getClosedLoopError().getValueAsDouble();
         //System.out.println("Tracking Error: " + error);
         //System.out.println("Turret Degrees: " + turretTurner.getPosition().getValueAsDouble() * 360);
-        System.out.println(turretHood.getPosition().getValueAsDouble());
+        //System.out.println(turretHood.getPosition().getValueAsDouble());
     }
 }

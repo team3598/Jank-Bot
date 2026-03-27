@@ -94,15 +94,15 @@ public class RobotContainer {
     private void configureBindings() {
        drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() -> {
-                double currentMaxSpeed = MaxSpeed;
-                
+                //double currentMaxSpeed = MaxSpeed;
+                double currentMaxSpeed = 0;
                 if (isShooting) {
                     currentMaxSpeed = MaxSpeed / 2.0; 
                 }
 
              return drive.withVelocityX(-ps5Controller.getLeftY() * currentMaxSpeed)
                     .withVelocityY(-ps5Controller.getLeftX() * currentMaxSpeed) 
-                    .withRotationalRate(-ps5Controller.getRightX() * MaxAngularRate);
+                    .withRotationalRate(-ps5Controller.getRightX() * 0);//MaxAngularRate);
             })
         );
 
@@ -134,6 +134,9 @@ public class RobotContainer {
         );
 
         ps5Controller.R2().whileTrue(
+            //Commands.runEnd(
+            //    () -> turret.setWillySpeed(30), 
+            //    () -> turret.setWillySpeed(0))
             turret.getAutoAimAndShootCommand(PoseSubsystem, drivetrain, hubPosition, nearTrench)
             .alongWith(
                 Commands.startEnd(
